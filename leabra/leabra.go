@@ -28,6 +28,9 @@ type LeabraLayer interface {
 	// Also calls InitActs
 	InitWts()
 
+	// InitSdEffWts initializes Eff weight values according to default
+	InitSdEffWt()
+
 	// InitActAvg initializes the running-average activation values that drive learning.
 	InitActAvg()
 
@@ -82,10 +85,13 @@ type LeabraLayer interface {
 
 	// SendGDelta sends change in activation since last sent, to increment recv
 	// synaptic conductances G, if above thresholds
-	SendGDelta(ltime *Time)
+	SendGDelta(ltime *Time, sleep bool)
 
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
+
+	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
+	CalSynDep(ltime *Time)
 
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition
 	AvgMaxGe(ltime *Time)
@@ -138,6 +144,9 @@ type LeabraPrjn interface {
 	// InitWts initializes weight values according to Learn.WtInit params
 	InitWts()
 
+	// InitSdEffWts initializes Eff weight values according to default
+	InitSdEffWt()
+
 	// InitWtSym initializes weight symmetry -- is given the reciprocal projection where
 	// the Send and Recv layers are reversed.
 	InitWtSym(rpj LeabraPrjn)
@@ -148,7 +157,10 @@ type LeabraPrjn interface {
 
 	// SendGDelta sends the delta-activation from sending neuron index si,
 	// to integrate synaptic conductances on receivers
-	SendGDelta(si int, delta float32)
+	SendGDelta(si int, delta float32, sleep bool)
+
+	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
+	CalSynDep(si int, preSynAct float32)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc()

@@ -1,0 +1,2 @@
+_H:	|Run	|Epoch	#SSE	#AvgSSE	#PctErr	#PctCor	#CosDiff	#Hid1 ActAvg	#Out ActAvg	#BlaNeOut ActAvg	#BlaPoOut ActAvg
+_D:	0	0	3.8	0.152	1	0	0.09107	0.08645	0.1546	0.2706	0.2701

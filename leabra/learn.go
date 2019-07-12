@@ -101,6 +101,7 @@ func (ls *LearnSynParams) InitWts(syn *Synapse) {
 	syn.DWt = 0
 	syn.Norm = 0
 	syn.Moment = 0
+	syn.SRAvgDp = 1
 }
 
 // LWtFmWt updates the linear weight value based on the current effective Wt value.

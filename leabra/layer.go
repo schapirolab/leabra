@@ -353,6 +353,16 @@ func (ly *Layer) InitWts() {
 	ly.CosDiff.Init()
 }
 
+// InitSdEffWt initializes the Effwt and Cai for each synapse.
+func (ly *Layer) InitSdEffWt() {
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(LeabraPrjn).InitSdEffWt()
+	}
+}
+
 // InitActAvg initializes the running-average activation values that drive learning.
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
@@ -637,7 +647,7 @@ func (ly *Layer) InitGInc() {
 
 // SendGDelta sends change in activation since last sent, to increment recv
 // synaptic conductances G, if above thresholds
-func (ly *Layer) SendGDelta(ltime *Time) {
+func (ly *Layer) SendGDelta(ltime *Time, sleep bool) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -650,7 +660,7 @@ func (ly *Layer) SendGDelta(ltime *Time) {
 					if sp.IsOff() {
 						continue
 					}
-					sp.(LeabraPrjn).SendGDelta(ni, delta)
+					sp.(LeabraPrjn).SendGDelta(ni, delta, sleep)
 				}
 				nrn.ActSent = nrn.Act
 			}
@@ -660,7 +670,7 @@ func (ly *Layer) SendGDelta(ltime *Time) {
 				if sp.IsOff() {
 					continue
 				}
-				sp.(LeabraPrjn).SendGDelta(ni, delta)
+				sp.(LeabraPrjn).SendGDelta(ni, delta, sleep)
 			}
 			nrn.ActSent = 0
 		}
@@ -681,6 +691,22 @@ func (ly *Layer) GFmInc(ltime *Time) {
 			continue
 		}
 		ly.Act.GeGiFmInc(nrn)
+	}
+}
+
+// CalSynDep computes the Sender-Receiver co-activation based synaptic depression, added by DH.
+func (ly *Layer) CalSynDep(ltime *Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
+			}
+			sp.(LeabraPrjn).CalSynDep(ni, nrn.Act)
+		}
 	}
 }
 

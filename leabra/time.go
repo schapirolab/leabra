@@ -49,6 +49,12 @@ func (tm *Time) AlphaCycStart() {
 	tm.Quarter = 0
 }
 
+// SleepCycStart starts a new sleep-cycle (set of 4 quarters)
+func (tm *Time) SleepCycStart() {
+	tm.Cycle = 0
+	// tm.Quarter = 0
+}
+
 // CycleInc increments at the cycle level
 func (tm *Time) CycleInc() {
 	tm.Cycle++

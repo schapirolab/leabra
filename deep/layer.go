@@ -306,6 +306,11 @@ func (ly *Layer) GFmInc(ltime *leabra.Time) {
 	}
 }
 
+// TODO added deep leabra version of synaptic depression. Don't know how to do it yet. Using the exact same methods for now. May broke the network. Who knows!
+func (ly *Layer) CalSynDep(ltime *leabra.Time) {
+	ly.Layer.CalSynDep(ltime)
+}
+
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 // Deep version also computes AttnGe stats
 func (ly *Layer) AvgMaxGe(ltime *leabra.Time) {

@@ -1,0 +1,2 @@
+_H:	$Params	#FirstZero:Count	#FirstZero:Mean	#FirstZero:Std	#FirstZero:Sem	#FirstZero:Min	#FirstZero:Q1	#FirstZero:Median	#FirstZero:Q3	#FirstZero:Max	#PctCor:Count	#PctCor:Mean	#PctCor:Std	#PctCor:Sem	#PctCor:Min	#PctCor:Q1	#PctCor:Median	#PctCor:Q3	#PctCor:Max
+_D:	UnBalIn	10	-1	0	0	-1	-1	-1	-1	-1	10	0.9189898989898989	0.005808446775177887	0.0018367921477422096	0.908080808080808	0.9147727272727272	0.9219696969696971	0.9227272727272726	0.9262626262626263

@@ -263,6 +263,19 @@ func (pj *Prjn) InitWts() {
 	pj.LeabraPrj.InitGInc()
 }
 
+// InitEffwt initializes effective weight values and all synaptic depression related variables according to default
+func (pj *Prjn) InitSdEffWt() {
+	for si := range pj.Syns {
+		pj.Syns[si].Effwt = pj.Syns[si].Wt
+		pj.Syns[si].Cai = 0.0
+		pj.Syns[si].Ca_dec = 0.2
+		pj.Syns[si].Ca_inc = 0.2
+		pj.Syns[si].sd_ca_thr = 0.2
+		pj.Syns[si].sd_ca_gain = 0.3
+		pj.Syns[si].sd_ca_thr_rescale = pj.Syns[si].sd_ca_gain / (1.0 - pj.Syns[si].sd_ca_thr)
+	}
+}
+
 // InitWtSym initializes weight symmetry -- is given the reciprocal projection where
 // the Send and Recv layers are reversed.
 func (pj *Prjn) InitWtSym(rpjp LeabraPrjn) {
@@ -304,10 +317,33 @@ func (pj *Prjn) InitGInc() {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
+// CaUpdt calculated the Cai for each synapses.
+func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
+	nc := pj.SConN[si]
+	st := pj.SConIdxSt[si]
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	rlay := pj.Recv.(LeabraLayer).AsLeabra()
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		syns[ci].CaUpdt(rn.Act, preSynAct)
+	}
+}
+
+// CalSynDep calculated the synaptic depression variable for each synapse.
+func (pj *Prjn) CalSynDep(si int, preSynAct float32) {
+	nc := pj.SConN[si]
+	st := pj.SConIdxSt[si]
+	syns := pj.Syns[st : st+nc]
+	for ci := range syns {
+		syns[ci].Effwt = syns[ci].Wt * syns[ci].SynDep()
+	}
+}
 
 // SendGDelta sends the delta-activation from sending neuron index si,
 // to integrate synaptic conductances on receivers
-func (pj *Prjn) SendGDelta(si int, delta float32) {
+func (pj *Prjn) SendGDelta(si int, delta float32, sleep bool) {
 	scdel := delta * pj.GScale
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
@@ -315,7 +351,11 @@ func (pj *Prjn) SendGDelta(si int, delta float32) {
 	scons := pj.SConIdx[st : st+nc]
 	for ci := range syns {
 		ri := scons[ci]
-		pj.GInc[ri] += scdel * syns[ci].Wt
+		if sleep {
+			pj.GInc[ri] += scdel * syns[ci].Effwt // Switch to EffWt!!! By Diheng DONE
+		} else {
+			pj.GInc[ri] += scdel * syns[ci].Wt //  Original update rule.
+		}
 	}
 }
 
