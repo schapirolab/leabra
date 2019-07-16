@@ -333,6 +333,7 @@ func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
 
 // CalSynDep calculated the synaptic depression variable for each synapse.
 func (pj *Prjn) CalSynDep(si int, preSynAct float32) {
+	// fmt.Println("Step into the real CalSynDep")
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]

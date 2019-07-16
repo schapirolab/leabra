@@ -705,6 +705,7 @@ func (ly *Layer) CalSynDep(ltime *Time) {
 			if sp.IsOff() {
 				continue
 			}
+			sp.(LeabraPrjn).CaUpdt(ni, nrn.Act)
 			sp.(LeabraPrjn).CalSynDep(ni, nrn.Act)
 		}
 	}

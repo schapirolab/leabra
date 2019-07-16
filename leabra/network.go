@@ -5,6 +5,7 @@
 package leabra
 
 import (
+	"fmt"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
@@ -121,6 +122,7 @@ func (nt *Network) AlphaCycInit() {
 func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	if sleep {
 		nt.CalSynDep(ltime) // Added Synaptic depression by DH.
+		fmt.Println("CalSynDep was run.")
 	}
 	nt.SendGDelta(ltime, sleep) // also does integ
 	nt.AvgMaxGe(ltime)

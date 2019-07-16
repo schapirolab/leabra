@@ -303,6 +303,12 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 
 	// note: see emergent/prjn module for all the options on how to connect
 	// NewFull returns a new prjn.Full connectivity pattern
+	i := net.ConnectLayers(hid1Lay, inLay, prjn.NewFull(), emer.Back)
+	i.SetOff(true)
+	n := net.ConnectLayers(hid1Lay, blaNeInLay, prjn.NewFull(), emer.Back)
+	n.SetOff(true)
+	p := net.ConnectLayers(hid1Lay, blaPoInLay, prjn.NewFull(), emer.Back)
+	p.SetOff(true)
 	net.ConnectLayers(outLay, hid1Lay, prjn.NewFull(), emer.Back)
 	net.ConnectLayers(blaNeOutLay, hid1Lay, prjn.NewFull(), emer.Back)
 	net.ConnectLayers(blaPoOutLay, hid1Lay, prjn.NewFull(), emer.Back)
@@ -381,13 +387,21 @@ func (ss *Sim) SleepCycInit() {
 	// Set all layers into random activation
 	fmt.Println("Now I am going to reset the layers.... May cause some damages here.")
 	// Need to connect hidden back to input.
-	//	inLay := ss.Net.LayerByName("Input").(*leabra.Layer)
-	//	blaNeInLay := ss.Net.LayerByName("Ne").(*leabra.Layer)
-	//	blaPoInLay := ss.Net.LayerByName("Po").(*leabra.Layer)
-	//	hid1Lay := ss.Net.LayerByName("Hidden1").(*leabra.Layer)
-	//	ss.Net.ConnectLayers(hid1Lay, inLay, prjn.NewFull(), emer.Back)
-	//	ss.Net.ConnectLayers(hid1Lay, blaNeInLay, prjn.NewFull(), emer.Back)
-	//	ss.Net.ConnectLayers(hid1Lay, blaPoInLay, prjn.NewFull(), emer.Back)
+	inLay := ss.Net.LayerByName("Input").(*leabra.Layer)
+	blaNeInLay := ss.Net.LayerByName("Ne").(*leabra.Layer)
+	blaPoInLay := ss.Net.LayerByName("Po").(*leabra.Layer)
+
+	// Turn on all the RcvPrjns
+	for _, p := range inLay.RcvPrjns {
+		p.SetOff(false)
+	}
+	for _, p := range blaPoInLay.RcvPrjns {
+		p.SetOff(false)
+	}
+	for _, p := range blaNeInLay.RcvPrjns {
+		p.SetOff(false)
+	}
+
 	for _, ly := range ss.Net.Layers {
 		ly.SetType(emer.Hidden)
 		fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
@@ -426,6 +440,18 @@ func (ss *Sim) BackToWake() {
 	outLay.SetType(emer.Target)
 	blaNeOutLay.SetType(emer.Target)
 	blaPoOutLay.SetType(emer.Target)
+
+	// Turn the back prjn from hidden to input off.
+	for _, p := range inLay.RcvPrjns {
+		p.SetOff(true)
+	}
+	for _, p := range blaPoInLay.RcvPrjns {
+		p.SetOff(true)
+	}
+	for _, p := range blaNeInLay.RcvPrjns {
+		p.SetOff(true)
+	}
+
 	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
 	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
 }
@@ -493,6 +519,19 @@ func (ss *Sim) AlphaCyc(state string) {
 	}
 }
 
+// This is a function called to print the hidden network activities, as a monitor.
+func (ss *Sim) MonSlpCyc() {
+	hid1Lay := ss.Net.LayerByName("Hidden1").(*leabra.Layer)
+	for ni := range hid1Lay.Neurons {
+		nrn := &hid1Lay.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		fmt.Println("Layer: hidden1, Neuron: %d, Original activation: %d", ni, nrn.Act)
+	}
+	fmt.Scanln()
+}
+
 // TODO the sleepCyc is a modification from the AlphaCycle, Added by DH based on Anna's design.
 // The Sleep Mode structure:
 // - SleepTrial is a modification of the TrainTrial
@@ -523,6 +562,7 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 				if (cyc+1)%10 == 0 {
 					fmt.Println("Should be seeing some flashing in the netview at this point.")
 					ss.UpdateView("sleep")
+					ss.MonSlpCyc()
 				}
 			case leabra.Quarter:
 				if (cyc+1)%25 == 0 {

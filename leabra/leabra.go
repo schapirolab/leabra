@@ -162,6 +162,9 @@ type LeabraPrjn interface {
 	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
 	CalSynDep(si int, preSynAct float32)
 
+	// CaUpdt compute Sender-Receiver co-activation based synaptic depression variable
+	CaUpdt(si int, preSynAct float32)
+
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc()
 

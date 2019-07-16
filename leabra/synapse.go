@@ -4,7 +4,10 @@
 
 package leabra
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 // leabra.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
@@ -63,6 +66,9 @@ func (sy *Synapse) SynDep() float32 {
 	cao_thr := float32(1.0)
 	if sy.Cai > sy.sd_ca_thr {
 		cao_thr = 1.0 - sy.sd_ca_thr_rescale*(sy.Cai-sy.sd_ca_thr)
+		if cao_thr*cao_thr < 0.7 {
+			fmt.Println("SynDep happened, syndep is %s", cao_thr*cao_thr)
+		}
 	}
 	return cao_thr * cao_thr
 
@@ -71,5 +77,9 @@ func (sy *Synapse) SynDep() float32 {
 // CaUpdt calculated the Cai for each synapses.
 func (sy *Synapse) CaUpdt(ru_act float32, su_act float32) {
 	drive := ru_act * su_act
+	// orgl := sy.Cai
 	sy.Cai += sy.Ca_inc*(1.0-sy.Cai)*drive - sy.Ca_dec*sy.Cai
+	//	if orgl != sy.Cai {
+	//		fmt.Println("Synaptic Cai has been updated, previously %s, now %s", orgl, sy.Cai)
+	//	}
 }

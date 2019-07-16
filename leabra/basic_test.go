@@ -172,7 +172,7 @@ func TestNetAct(t *testing.T) {
 		ltime.AlphaCycStart()
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
-				TestNet.Cycle(ltime)
+				TestNet.Cycle(ltime, false)
 				ltime.CycleInc()
 
 				if printCycs {
@@ -318,7 +318,7 @@ func TestNetLearn(t *testing.T) {
 			ltime.AlphaCycStart()
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
-					TestNet.Cycle(ltime)
+					TestNet.Cycle(ltime, false)
 					ltime.CycleInc()
 
 					hidAct := hidLay.UnitVals("Act")
@@ -493,7 +493,7 @@ func TestInhibAct(t *testing.T) {
 		ltime.AlphaCycStart()
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
-				InhibNet.Cycle(ltime)
+				InhibNet.Cycle(ltime, false)
 				ltime.CycleInc()
 
 				if printCycs {
