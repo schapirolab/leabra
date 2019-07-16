@@ -353,7 +353,8 @@ func (pj *Prjn) SendGDelta(si int, delta float32, sleep bool) {
 	for ci := range syns {
 		ri := scons[ci]
 		if sleep {
-			pj.GInc[ri] += scdel * syns[ci].Effwt // Switch to EffWt!!! By Diheng DONE
+			//			fmt.Println("Current Effwt and Wt: %d; %d.", syns[ci].Effwt, syns[ci].Wt)
+			pj.GInc[ri] += scdel * syns[ci].Effwt // Switch to Effwt!!! By Diheng DONE
 		} else {
 			pj.GInc[ri] += scdel * syns[ci].Wt //  Original update rule.
 		}

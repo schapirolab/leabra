@@ -66,12 +66,9 @@ func (sy *Synapse) SynDep() float32 {
 	cao_thr := float32(1.0)
 	if sy.Cai > sy.sd_ca_thr {
 		cao_thr = 1.0 - sy.sd_ca_thr_rescale*(sy.Cai-sy.sd_ca_thr)
-		if cao_thr*cao_thr < 0.7 {
-			fmt.Println("SynDep happened, syndep is %s", cao_thr*cao_thr)
-		}
+		fmt.Println("SynDep happened, syndep is %d, cai is %d:", cao_thr*cao_thr, sy.Cai)
 	}
-	return cao_thr * cao_thr
-
+	return cao_thr * cao_thr * 0.5
 }
 
 // CaUpdt calculated the Cai for each synapses.

@@ -127,6 +127,29 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.WtBal.On": "true",
 				}},
 		},
+	}}, {Name: "Sleep", Desc: "these are the sleep params", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Learn.Norm.On":     "true",
+					"Prjn.Learn.Momentum.On": "true",
+					"Prjn.Learn.WtBal.On":    "false",
+				}},
+			{Sel: "Layer", Desc: "using weaker 0.8 inhib for all of network -- can explore",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.8",
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.WtScale.Rel": "1",
+				}},
+		},
+		"Sim": &params.Sheet{ // sim params apply to sim object
+			{Sel: "Sim", Desc: "best params always finish in this time",
+				Params: params.Params{
+					"Sim.MaxEpcs": "50",
+				}},
+		},
 	}},
 }
 
@@ -303,12 +326,12 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 
 	// note: see emergent/prjn module for all the options on how to connect
 	// NewFull returns a new prjn.Full connectivity pattern
-	i := net.ConnectLayers(hid1Lay, inLay, prjn.NewFull(), emer.Back)
-	i.SetOff(true)
-	n := net.ConnectLayers(hid1Lay, blaNeInLay, prjn.NewFull(), emer.Back)
-	n.SetOff(true)
-	p := net.ConnectLayers(hid1Lay, blaPoInLay, prjn.NewFull(), emer.Back)
-	p.SetOff(true)
+	net.ConnectLayers(hid1Lay, inLay, prjn.NewFull(), emer.Back)
+	// i.SetOff(true)
+	net.ConnectLayers(hid1Lay, blaNeInLay, prjn.NewFull(), emer.Back)
+	// n.SetOff(true)
+	net.ConnectLayers(hid1Lay, blaPoInLay, prjn.NewFull(), emer.Back)
+	// p.SetOff(true)
 	net.ConnectLayers(outLay, hid1Lay, prjn.NewFull(), emer.Back)
 	net.ConnectLayers(blaNeOutLay, hid1Lay, prjn.NewFull(), emer.Back)
 	net.ConnectLayers(blaPoOutLay, hid1Lay, prjn.NewFull(), emer.Back)
@@ -367,7 +390,7 @@ func (ss *Sim) Counters(state string) string {
 	case "test":
 		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.TestEnv.TrialName)
 	case "sleep":
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tSleep_Trial:\t%d\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.SleepEnv.Trial.Cur)
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tSleep_Trial:\t%d\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.SleepEnv.Trial.Cur)
 	}
 	return ""
 }
@@ -387,20 +410,10 @@ func (ss *Sim) SleepCycInit() {
 	// Set all layers into random activation
 	fmt.Println("Now I am going to reset the layers.... May cause some damages here.")
 	// Need to connect hidden back to input.
-	inLay := ss.Net.LayerByName("Input").(*leabra.Layer)
-	blaNeInLay := ss.Net.LayerByName("Ne").(*leabra.Layer)
-	blaPoInLay := ss.Net.LayerByName("Po").(*leabra.Layer)
+	ss.SetInBackPrjnOff(false)
 
-	// Turn on all the RcvPrjns
-	for _, p := range inLay.RcvPrjns {
-		p.SetOff(false)
-	}
-	for _, p := range blaPoInLay.RcvPrjns {
-		p.SetOff(false)
-	}
-	for _, p := range blaNeInLay.RcvPrjns {
-		p.SetOff(false)
-	}
+	// Set the parameters
+	ss.SetParamsSet("Sleep", "", true)
 
 	for _, ly := range ss.Net.Layers {
 		ly.SetType(emer.Hidden)
@@ -419,7 +432,7 @@ func (ss *Sim) SleepCycInit() {
 	// Set all the parameters to sleep mode - need to replicate the SRAvgCaiSynDepConSpec file from the older version
 	// TODO Not yet done.
 
-	fmt.Scanln()
+	//	fmt.Scanln()
 	ss.UpdateView("sleep")
 }
 
@@ -442,15 +455,10 @@ func (ss *Sim) BackToWake() {
 	blaPoOutLay.SetType(emer.Target)
 
 	// Turn the back prjn from hidden to input off.
-	for _, p := range inLay.RcvPrjns {
-		p.SetOff(true)
-	}
-	for _, p := range blaPoInLay.RcvPrjns {
-		p.SetOff(true)
-	}
-	for _, p := range blaNeInLay.RcvPrjns {
-		p.SetOff(true)
-	}
+	ss.SetInBackPrjnOff(true)
+
+	// Set the parameters
+	ss.SetParamsSet("Base", "", true)
 
 	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
 	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
@@ -542,7 +550,9 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 	fmt.Println("I am in the SleepCyc!!!! Can't believe it!!!")
 	//ss.MaxSlpCyc = 50
 	viewUpdt := ss.SleepUpdt
+	fmt.Scanln()
 	ss.SleepCycInit()
+	fmt.Scanln()
 	fmt.Println("Sleep mode officially starts here.")
 	ss.Time.SleepCycStart()
 	for cyc := 0; cyc < ss.MaxSlpCyc; cyc++ {
@@ -556,22 +566,22 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		if ss.ViewOn {
 			switch viewUpdt {
 			case leabra.Cycle:
-				fmt.Println("Should be seeing some flashing in the netview at this point.")
+				fmt.Scanln()
 				ss.UpdateView("sleep")
 			case leabra.FastSpike:
 				if (cyc+1)%10 == 0 {
-					fmt.Println("Should be seeing some flashing in the netview at this point.")
+					//					fmt.Println("Should be seeing some flashing in the netview at this point.")
 					ss.UpdateView("sleep")
-					ss.MonSlpCyc()
+					//ss.MonSlpCyc()
 				}
 			case leabra.Quarter:
 				if (cyc+1)%25 == 0 {
-					fmt.Println("Should be seeing some flashing in the netview at this point.")
+					//				fmt.Println("Should be seeing some flashing in the netview at this point.")
 					ss.UpdateView("sleep")
 				}
 			case leabra.Phase:
 				if (cyc+1)%100 == 0 {
-					fmt.Println("Should be seeing some flashing in the netview at this point.")
+					//			fmt.Println("Should be seeing some flashing in the netview at this point.")
 					ss.UpdateView("sleep")
 				}
 			}
@@ -669,7 +679,7 @@ func (ss *Sim) TrainTrial() {
 	}
 
 	// TODO Added by DH: Here should be the good place to check if we should start a sleep
-	if (epc > 1) && (ss.EpcAvgSSE < 1.5) {
+	if (epc > 1) && (ss.EpcSSE < 0.7) {
 		fmt.Println("I stepped into the sleeping black hole...")
 		ss.SleepTrial()
 	}
@@ -701,6 +711,25 @@ func (ss *Sim) NewRun() {
 	ss.InitStats()
 	ss.TrnEpcLog.SetNumRows(0)
 	ss.TstEpcLog.SetNumRows(0)
+}
+
+// intializes the network properties
+func (ss *Sim) SetInBackPrjnOff(off bool) {
+	// Need to connect hidden back to input.
+	inLay := ss.Net.LayerByName("Input").(*leabra.Layer)
+	blaNeInLay := ss.Net.LayerByName("Ne").(*leabra.Layer)
+	blaPoInLay := ss.Net.LayerByName("Po").(*leabra.Layer)
+
+	// Turn on all the RcvPrjns
+	for _, p := range inLay.RcvPrjns {
+		p.SetOff(off)
+	}
+	for _, p := range blaPoInLay.RcvPrjns {
+		p.SetOff(off)
+	}
+	for _, p := range blaNeInLay.RcvPrjns {
+		p.SetOff(off)
+	}
 }
 
 // InitStats initializes all the statistics, especially important for the
@@ -770,6 +799,7 @@ func (ss *Sim) TrainRun() {
 // Train runs the full training from this point onward
 func (ss *Sim) Train() {
 	ss.StopNow = false
+	ss.SetInBackPrjnOff(true)
 	for {
 		ss.TrainTrial()
 		if ss.StopNow {
