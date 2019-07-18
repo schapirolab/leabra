@@ -127,7 +127,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.WtBal.On": "true",
 				}},
 		},
-	}}, {Name: "Sleep", Desc: "these are the sleep params", Sheets: params.Sheets{
+	}},
+	{Name: "Sleep", Desc: "these are the sleep params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
@@ -135,13 +136,13 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Momentum.On": "true",
 					"Prjn.Learn.WtBal.On":    "false",
 				}},
-			{Sel: "Layer", Desc: "using weaker 0.8 inhib for all of network -- can explore",
+			{Sel: "Layer", Desc: "using weaker 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Inhib.Layer.Gi": "1.8",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "1",
+					"Prjn.WtScale.Rel": "0.2",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -305,7 +306,7 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 	inLay := net.AddLayer2D("Input", 5, 5, emer.Input)
 	blaNeInLay := net.AddLayer2D("Ne", 3, 1, emer.Input)
 	blaPoInLay := net.AddLayer2D("Po", 3, 1, emer.Input)
-	hid1Lay := net.AddLayer2D("Hidden1", 15, 15, emer.Hidden)
+	hid1Lay := net.AddLayer2D("Hidden1", 8, 8, emer.Hidden)
 	outLay := net.AddLayer2D("Output", 5, 5, emer.Target)
 	blaNeOutLay := net.AddLayer2D("Ne_Out", 3, 1, emer.Target)
 	blaPoOutLay := net.AddLayer2D("Po_Out", 3, 1, emer.Target)
@@ -415,8 +416,10 @@ func (ss *Sim) SleepCycInit() {
 	// Set the parameters
 	ss.SetParamsSet("Sleep", "", true)
 
+	// Set all layers to be random activation and no clamping.
 	for _, ly := range ss.Net.Layers {
 		ly.SetType(emer.Hidden)
+		//ly.Act.Clamp.Hard = false
 		fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
 		for ni := range ly.(*leabra.Layer).Neurons {
 			nrn := &ly.(*leabra.Layer).Neurons[ni]
@@ -486,6 +489,7 @@ func (ss *Sim) AlphaCyc(state string) {
 	for qtr := 0; qtr < 4; qtr++ {
 		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
 			ss.Net.Cycle(&ss.Time, false)
+			//			ss.Net.Cycle(&ss.Time, true) // For syndep
 			if state == "test" {
 				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 			}
@@ -550,9 +554,9 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 	fmt.Println("I am in the SleepCyc!!!! Can't believe it!!!")
 	//ss.MaxSlpCyc = 50
 	viewUpdt := ss.SleepUpdt
-	fmt.Scanln()
+	//fmt.Scanln()
 	ss.SleepCycInit()
-	fmt.Scanln()
+	//fmt.Scanln()
 	fmt.Println("Sleep mode officially starts here.")
 	ss.Time.SleepCycStart()
 	for cyc := 0; cyc < ss.MaxSlpCyc; cyc++ {
@@ -560,13 +564,14 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		// Need to set the network to sleep mode, meaning set the input and output to be "hidden"
 		fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
 		ss.Net.Cycle(&ss.Time, true)
+		//fmt.Scanln()
 		fmt.Println("Sleep cyc works? Now what?")
 		ss.Time.CycleInc()
 		fmt.Println("I think everything works through but I am not sure.")
 		if ss.ViewOn {
 			switch viewUpdt {
 			case leabra.Cycle:
-				fmt.Scanln()
+				//			fmt.Scanln()
 				ss.UpdateView("sleep")
 			case leabra.FastSpike:
 				if (cyc+1)%10 == 0 {
@@ -590,7 +595,7 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 	}
 	if ss.ViewOn {
 		fmt.Println("Should be seeing some flashing in the netview at this point.")
-		fmt.Scanln()
+		//fmt.Scanln()
 		ss.UpdateView("sleep") // Update at the end of each sleep trials
 	}
 }
@@ -680,6 +685,7 @@ func (ss *Sim) TrainTrial() {
 
 	// TODO Added by DH: Here should be the good place to check if we should start a sleep
 	if (epc > 1) && (ss.EpcSSE < 0.7) {
+		ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 		fmt.Println("I stepped into the sleeping black hole...")
 		ss.SleepTrial()
 	}

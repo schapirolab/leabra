@@ -5,7 +5,7 @@
 package leabra
 
 import (
-	"fmt"
+	//	"fmt"
 	"reflect"
 )
 
@@ -66,9 +66,9 @@ func (sy *Synapse) SynDep() float32 {
 	cao_thr := float32(1.0)
 	if sy.Cai > sy.sd_ca_thr {
 		cao_thr = 1.0 - sy.sd_ca_thr_rescale*(sy.Cai-sy.sd_ca_thr)
-		fmt.Println("SynDep happened, syndep is %d, cai is %d:", cao_thr*cao_thr, sy.Cai)
+		//fmt.Println("SynDep happened, syndep is %d, cai is %d:", cao_thr*cao_thr, sy.Cai)
 	}
-	return cao_thr * cao_thr * 0.5
+	return cao_thr * cao_thr
 }
 
 // CaUpdt calculated the Cai for each synapses.

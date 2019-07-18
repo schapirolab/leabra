@@ -268,10 +268,10 @@ func (pj *Prjn) InitSdEffWt() {
 	for si := range pj.Syns {
 		pj.Syns[si].Effwt = pj.Syns[si].Wt
 		pj.Syns[si].Cai = 0.0
-		pj.Syns[si].Ca_dec = 0.2
-		pj.Syns[si].Ca_inc = 0.2
+		pj.Syns[si].Ca_dec = 0.0005
+		pj.Syns[si].Ca_inc = 0.01
 		pj.Syns[si].sd_ca_thr = 0.2
-		pj.Syns[si].sd_ca_gain = 0.3
+		pj.Syns[si].sd_ca_gain = 1.0
 		pj.Syns[si].sd_ca_thr_rescale = pj.Syns[si].sd_ca_gain / (1.0 - pj.Syns[si].sd_ca_thr)
 	}
 }
@@ -355,6 +355,7 @@ func (pj *Prjn) SendGDelta(si int, delta float32, sleep bool) {
 		if sleep {
 			//			fmt.Println("Current Effwt and Wt: %d; %d.", syns[ci].Effwt, syns[ci].Wt)
 			pj.GInc[ri] += scdel * syns[ci].Effwt // Switch to Effwt!!! By Diheng DONE
+			//			fmt.Println("Current delta and pj.GInc is: %d, %d", delta, pj.GInc[ri])
 		} else {
 			pj.GInc[ri] += scdel * syns[ci].Wt //  Original update rule.
 		}
