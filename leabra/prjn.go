@@ -266,13 +266,14 @@ func (pj *Prjn) InitWts() {
 // InitEffwt initializes effective weight values and all synaptic depression related variables according to default
 func (pj *Prjn) InitSdEffWt() {
 	for si := range pj.Syns {
-		pj.Syns[si].Effwt = pj.Syns[si].Wt
-		pj.Syns[si].Cai = 0.0
-		pj.Syns[si].Ca_dec = 0.0005
-		pj.Syns[si].Ca_inc = 0.01
-		pj.Syns[si].sd_ca_thr = 0.2
-		pj.Syns[si].sd_ca_gain = 1.0
-		pj.Syns[si].sd_ca_thr_rescale = pj.Syns[si].sd_ca_gain / (1.0 - pj.Syns[si].sd_ca_thr)
+		sy := &pj.Syns[si]
+		sy.Effwt = sy.Wt
+		sy.Cai = 0.0
+		sy.Ca_dec = 0.0001
+		sy.Ca_inc = 0.1
+		sy.sd_ca_thr = 0.09
+		sy.sd_ca_gain = 1.0
+		sy.sd_ca_thr_rescale = sy.sd_ca_gain / (1.0 - sy.sd_ca_thr)
 	}
 }
 
@@ -317,6 +318,17 @@ func (pj *Prjn) InitGInc() {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
+
+func (pj *Prjn) MonChge(si int) {
+	nc := pj.SConN[si]
+	st := pj.SConIdxSt[si]
+	syns := pj.Syns[st : st+nc]
+	for ci := range syns {
+		sy := &syns[ci]
+		fmt.Println("The current Wt and Effwt are: %d, %d.", sy.Wt, sy.Effwt)
+	}
+}
+
 // CaUpdt calculated the Cai for each synapses.
 func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
 	nc := pj.SConN[si]
@@ -327,7 +339,8 @@ func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
 	for ci := range syns {
 		ri := scons[ci]
 		rn := &rlay.Neurons[ri]
-		syns[ci].CaUpdt(rn.Act, preSynAct)
+		sy := &syns[ci]
+		sy.CaUpdt(rn.Act, preSynAct)
 	}
 }
 
@@ -338,7 +351,8 @@ func (pj *Prjn) CalSynDep(si int, preSynAct float32) {
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]
 	for ci := range syns {
-		syns[ci].Effwt = syns[ci].Wt * syns[ci].SynDep()
+		sy := &syns[ci]
+		sy.Effwt = sy.Wt * sy.SynDep()
 	}
 }
 

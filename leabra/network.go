@@ -61,6 +61,17 @@ func (nt *Network) InitWts() {
 		}
 		ly.(LeabraLayer).InitWts()
 	}
+	// separate pass to enforce symmetry
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(LeabraLayer).InitWtSym()
+	}
+}
+
+// InitEffWt
+func (nt *Network) InitSdEffWt() {
 	// initEffwt
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -68,12 +79,15 @@ func (nt *Network) InitWts() {
 		}
 		ly.(LeabraLayer).InitSdEffWt()
 	}
-	// separate pass to enforce symmetry
+}
+
+// InitGInc is a wrapper function added by DH to call the layer level of InitGInc
+func (nt *Network) InitGInc() {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitWtSym()
+		ly.(LeabraLayer).InitGInc()
 	}
 }
 
@@ -121,7 +135,9 @@ func (nt *Network) AlphaCycInit() {
 // want to keep a consistent API for end-user code.
 func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	if sleep {
-		nt.CalSynDep(ltime) // Added Synaptic depression by DH.
+		nt.CaUpdt(ltime) // Added Synaptic depression by DH.
+		nt.CalSynDep(ltime)
+		//nt.InitGInc()
 	}
 	nt.SendGDelta(ltime, sleep) // also does integ
 	nt.AvgMaxGe(ltime)
@@ -135,6 +151,16 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 func (nt *Network) SendGDelta(ltime *Time, sleep bool) {
 	nt.ThrLayFun(func(ly LeabraLayer) { ly.SendGDelta(ltime, sleep) }, "SendGDelta")
 	nt.ThrLayFun(func(ly LeabraLayer) { ly.GFmInc(ltime) }, "GFmInc")
+}
+
+// MonChge is a monitor
+func (nt *Network) MonChge(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.MonChge(ltime) }, "MonChge")
+}
+
+// CaUpdt computes the synaptic depression variable.
+func (nt *Network) CaUpdt(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.CaUpdt(ltime) }, "CaUpdt")
 }
 
 // CalSynDep computes the synaptic depression variable.

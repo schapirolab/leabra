@@ -93,6 +93,12 @@ type LeabraLayer interface {
 	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
 	CalSynDep(ltime *Time)
 
+	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
+	CaUpdt(ltime *Time)
+
+	// MonChge monitor Sender-Receiver co-activation based synaptic depression variable
+	MonChge(ltime *Time)
+
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition
 	AvgMaxGe(ltime *Time)
 
@@ -164,6 +170,9 @@ type LeabraPrjn interface {
 
 	// CaUpdt compute Sender-Receiver co-activation based synaptic depression variable
 	CaUpdt(si int, preSynAct float32)
+
+	// MonChge monitor Sender-Receiver co-activation based synaptic depression variable
+	MonChge(si int)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc()
