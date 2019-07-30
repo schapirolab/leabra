@@ -142,7 +142,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.WtScale.Rel": "1",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -181,6 +181,7 @@ type Sim struct {
 	TestEnv      env.FixedTable    `desc:"Testing environment -- manages iterating over testing"`
 	Time         leabra.Time       `desc:"leabra timing parameters and state"`
 	ViewOn       bool              `desc:"whether to update the network view while running"`
+	Sleep        bool              `desc:"whether to update the network view while running"`
 	TrainUpdt    leabra.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
 	SleepUpdt    leabra.TimeScales `desc:"at what time scale to update the display during sleep? Anything longer than Epoch updates at Epoch in this model"` // added by DH
 	TestUpdt     leabra.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
@@ -240,6 +241,7 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
+	ss.Sleep = false
 	ss.TrainUpdt = leabra.Cycle
 	ss.TestUpdt = leabra.Cycle
 	ss.TestInterval = 5
@@ -411,8 +413,9 @@ func (ss *Sim) SleepCycInit() {
 	// Set all layers into random activation
 	fmt.Println("Now I am going to reset the layers.... May cause some damages here.")
 	// Need to connect hidden back to input.
-	ss.SetInBackPrjnOff(false)
+	//ss.SetInBackPrjnOff(false)
 
+	ss.Net.InitSdEffWt()
 	// Set the parameters
 	ss.SetParamsSet("Sleep", "", true)
 
@@ -426,9 +429,9 @@ func (ss *Sim) SleepCycInit() {
 			if nrn.IsOff() {
 				continue
 			}
-			fmt.Println("Layer: %v, Neuron: %d, Original activation: %d", ly.Label(), ni, nrn.Act)
+			//	fmt.Println("Layer: %v, Neuron: %d, Original activation: %d", ly.Label(), ni, nrn.Act)
 			nrn.Act = rand.Float32()
-			fmt.Println("Layer: %v, Neuron: %d, Random activation: %d", ly.Label(), ni, nrn.Act)
+			//fmt.Println("Layer: %v, Neuron: %d, Random activation: %d", ly.Label(), ni, nrn.Act)
 		}
 	}
 	fmt.Println("I reset the network layers! Hope everything is still fine....")
@@ -458,7 +461,7 @@ func (ss *Sim) BackToWake() {
 	blaPoOutLay.SetType(emer.Target)
 
 	// Turn the back prjn from hidden to input off.
-	ss.SetInBackPrjnOff(true)
+	//ss.SetInBackPrjnOff(true)
 
 	// Set the parameters
 	ss.SetParamsSet("Base", "", true)
@@ -563,6 +566,12 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		// Need to init the network here. How? Don't know yet. It was the SetToSleep program in Anna's version.
 		// Need to set the network to sleep mode, meaning set the input and output to be "hidden"
 		fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
+		// Reset GInc to help synaptic depression.
+		//if (cyc+1)%10 == 0 {
+		//ss.Net.InitGInc()
+		//ss.Net.CalSynDep(&ss.Time)
+		//}
+		//	ss.Net.CalSynDep(&ss.Time)
 		ss.Net.Cycle(&ss.Time, true)
 		//fmt.Scanln()
 		fmt.Println("Sleep cyc works? Now what?")
@@ -593,6 +602,7 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		}
 		// In the AlphaCyc(), we have quarters, but during sleep, I did not add quarters - maybe later?
 	}
+	//ss.Net.MonChge(&ss.Time)
 	if ss.ViewOn {
 		fmt.Println("Should be seeing some flashing in the netview at this point.")
 		//fmt.Scanln()
@@ -684,10 +694,12 @@ func (ss *Sim) TrainTrial() {
 	}
 
 	// TODO Added by DH: Here should be the good place to check if we should start a sleep
-	if (epc > 1) && (ss.EpcSSE < 0.7) {
-		ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
-		fmt.Println("I stepped into the sleeping black hole...")
-		ss.SleepTrial()
+	if ss.Sleep {
+		if (epc > 1) && (ss.EpcSSE < 0.7) {
+			ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
+			fmt.Println("I stepped into the sleeping black hole...")
+			ss.SleepTrial()
+		}
 	}
 
 	ss.ApplyInputs(&ss.TrainEnv)
@@ -805,7 +817,7 @@ func (ss *Sim) TrainRun() {
 // Train runs the full training from this point onward
 func (ss *Sim) Train() {
 	ss.StopNow = false
-	ss.SetInBackPrjnOff(true)
+	//ss.SetInBackPrjnOff(true)
 	for {
 		ss.TrainTrial()
 		if ss.StopNow {
