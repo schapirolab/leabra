@@ -722,7 +722,7 @@ func (ly *Layer) CalSynDep(ltime *Time) {
 				continue
 			}
 			sp.(LeabraPrjn).CalSynDep(ni, nrn.Act)
-			sp.(LeabraPrjn).MonChge(ni)
+			//		sp.(LeabraPrjn).MonChge(ni)
 		}
 	}
 }

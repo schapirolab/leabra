@@ -142,7 +142,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "1",
+					"Prjn.WtScale.Rel": "0.8",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -423,7 +423,7 @@ func (ss *Sim) SleepCycInit() {
 	for _, ly := range ss.Net.Layers {
 		ly.SetType(emer.Hidden)
 		//ly.Act.Clamp.Hard = false
-		fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
+	//	fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
 		for ni := range ly.(*leabra.Layer).Neurons {
 			nrn := &ly.(*leabra.Layer).Neurons[ni]
 			if nrn.IsOff() {
@@ -466,8 +466,8 @@ func (ss *Sim) BackToWake() {
 	// Set the parameters
 	ss.SetParamsSet("Base", "", true)
 
-	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
-	fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
+	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
+	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -566,12 +566,6 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		// Need to init the network here. How? Don't know yet. It was the SetToSleep program in Anna's version.
 		// Need to set the network to sleep mode, meaning set the input and output to be "hidden"
 		fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
-		// Reset GInc to help synaptic depression.
-		//if (cyc+1)%10 == 0 {
-		//ss.Net.InitGInc()
-		//ss.Net.CalSynDep(&ss.Time)
-		//}
-		//	ss.Net.CalSynDep(&ss.Time)
 		ss.Net.Cycle(&ss.Time, true)
 		//fmt.Scanln()
 		fmt.Println("Sleep cyc works? Now what?")
@@ -982,7 +976,8 @@ func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
+//	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
+	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
 	if err != nil {
 		log.Println(err)
 	}
