@@ -743,6 +743,16 @@ func (ly *Layer) MonChge(ltime *Time) {
 	}
 }
 
+// InhibOscil computes the layer level inhibition oscillation scaling factor.
+func (ly *Layer) InhibOscil(ltime *Time, step int) {
+	ly.Inhib.Layer.InhibOscil(step)
+}
+
+// InhibOscilMute set the layer inhibition back to base
+func (ly *Layer) InhibOscilMute(ltime *Time) {
+	ly.Inhib.Layer.InhibOscilMute()
+}
+
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (ly *Layer) AvgMaxGe(ltime *Time) {
 	for pi := range ly.Pools {

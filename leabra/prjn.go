@@ -269,9 +269,9 @@ func (pj *Prjn) InitSdEffWt() {
 		sy := &pj.Syns[si]
 		sy.Effwt = sy.Wt
 		sy.Cai = 0.0
-		sy.Ca_dec = 0.003
+		sy.Ca_dec = 0.02
 		sy.Ca_inc = 0.2
-		sy.sd_ca_thr = 0.00008
+		sy.sd_ca_thr = 0.0
 		sy.sd_ca_gain = 2
 		sy.sd_ca_thr_rescale = sy.sd_ca_gain / (1.0 - sy.sd_ca_thr)
 	}

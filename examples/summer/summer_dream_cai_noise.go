@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Norm.On":     "true",
 					"Prjn.Learn.Momentum.On": "true",
-					"Prjn.Learn.WtBal.On":    "false",
+					"Prjn.Learn.WtBal.On":    "true",
 				}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
@@ -132,11 +132,11 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "true",
-					"Prjn.Learn.Momentum.On": "true",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.WtBal.On":    "false",
 				}},
-			{Sel: "Layer", Desc: "using weaker 1.8 inhib for all of network -- can explore",
+			{Sel: "Layer", Desc: "using stronger than 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.8",
 				}},
@@ -181,7 +181,8 @@ type Sim struct {
 	TestEnv      env.FixedTable    `desc:"Testing environment -- manages iterating over testing"`
 	Time         leabra.Time       `desc:"leabra timing parameters and state"`
 	ViewOn       bool              `desc:"whether to update the network view while running"`
-	Sleep        bool              `desc:"whether to update the network view while running"`
+	Sleep        bool              `desc:"Sleep or not"`
+	InhibOscil   bool              `desc:"whether to implement inhibition oscillation"`
 	TrainUpdt    leabra.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
 	SleepUpdt    leabra.TimeScales `desc:"at what time scale to update the display during sleep? Anything longer than Epoch updates at Epoch in this model"` // added by DH
 	TestUpdt     leabra.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
@@ -241,7 +242,8 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
-	ss.Sleep = false
+	ss.Sleep = true
+	ss.InhibOscil = true
 	ss.TrainUpdt = leabra.Cycle
 	ss.TestUpdt = leabra.Cycle
 	ss.TestInterval = 5
@@ -423,7 +425,7 @@ func (ss *Sim) SleepCycInit() {
 	for _, ly := range ss.Net.Layers {
 		ly.SetType(emer.Hidden)
 		//ly.Act.Clamp.Hard = false
-	//	fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
+		//	fmt.Println("Here is a sanity check, the type of layer now should be 0, and it is:%d", int(ly.Type()))
 		for ni := range ly.(*leabra.Layer).Neurons {
 			nrn := &ly.(*leabra.Layer).Neurons[ni]
 			if nrn.IsOff() {
@@ -465,6 +467,11 @@ func (ss *Sim) BackToWake() {
 
 	// Set the parameters
 	ss.SetParamsSet("Base", "", true)
+
+	// If Inhibition oscillation is on, set it back to base
+	if ss.InhibOscil {
+		ss.Net.InhibOscilMute(&ss.Time)
+	}
 
 	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
 	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
@@ -554,7 +561,7 @@ func (ss *Sim) MonSlpCyc() {
 // - SleepCyc is also built upon Cycle. How? Don't know yet.
 
 func (ss *Sim) SleepCyc(WakeReplay bool) {
-	fmt.Println("I am in the SleepCyc!!!! Can't believe it!!!")
+	// fmt.Println("I am in the SleepCyc!!!! Can't believe it!!!")
 	//ss.MaxSlpCyc = 50
 	viewUpdt := ss.SleepUpdt
 	//fmt.Scanln()
@@ -565,12 +572,15 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 	for cyc := 0; cyc < ss.MaxSlpCyc; cyc++ {
 		// Need to init the network here. How? Don't know yet. It was the SetToSleep program in Anna's version.
 		// Need to set the network to sleep mode, meaning set the input and output to be "hidden"
-		fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
+	//	fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
+		if ss.InhibOscil {
+			ss.Net.InhibOscil(&ss.Time, cyc)
+		}
 		ss.Net.Cycle(&ss.Time, true)
 		//fmt.Scanln()
-		fmt.Println("Sleep cyc works? Now what?")
+	//	fmt.Println("Sleep cyc works? Now what?")
 		ss.Time.CycleInc()
-		fmt.Println("I think everything works through but I am not sure.")
+	//	fmt.Println("I think everything works through but I am not sure.")
 		if ss.ViewOn {
 			switch viewUpdt {
 			case leabra.Cycle:
@@ -598,7 +608,7 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 	}
 	//ss.Net.MonChge(&ss.Time)
 	if ss.ViewOn {
-		fmt.Println("Should be seeing some flashing in the netview at this point.")
+		//fmt.Println("Should be seeing some flashing in the netview at this point.")
 		//fmt.Scanln()
 		ss.UpdateView("sleep") // Update at the end of each sleep trials
 	}
@@ -641,20 +651,20 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 // Similar to the original SetToSleep program by Anna.
 
 func (ss *Sim) SleepTrial() {
-	fmt.Println("I am here in the SleepTrial, everything means still fine.")
+	//fmt.Println("I am here in the SleepTrial, everything means still fine.")
 	ss.SleepEnv.Step() // Should it step or not?
-	fmt.Println("So I believe the system make one step forward... Historical!!!!")
+	//fmt.Println("So I believe the system make one step forward... Historical!!!!")
 	// Query counters FIRST
 	_, _, chg := ss.SleepEnv.Counter(env.Epoch)
 	if chg {
-		fmt.Println("About to update view, not sure what will happen.")
+	//	fmt.Println("About to update view, not sure what will happen.")
 		if ss.ViewOn && ss.SleepUpdt > leabra.AlphaCycle {
 			ss.UpdateView("sleep")
 		}
 		//ss.LogTstEpc(ss.TstEpcLog)
 		return
 	}
-	fmt.Println("I survived the mysterious counters... So what is next?")
+	//fmt.Println("I survived the mysterious counters... So what is next?")
 	ss.SleepCyc(true)   // Need to implement this
 	ss.TrialStats(true) // I think this is necessary, but need to check.
 	ss.BackToWake()
@@ -691,7 +701,7 @@ func (ss *Sim) TrainTrial() {
 	if ss.Sleep {
 		if (epc > 1) && (ss.EpcSSE < 0.7) {
 			ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
-			fmt.Println("I stepped into the sleeping black hole...")
+			//fmt.Println("I stepped into the sleeping black hole...")
 			ss.SleepTrial()
 		}
 	}
@@ -976,7 +986,7 @@ func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-//	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
+	//	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
 	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
 	if err != nil {
 		log.Println(err)

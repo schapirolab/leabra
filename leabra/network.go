@@ -146,6 +146,16 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	nt.AvgMaxAct(ltime)
 }
 
+// InhibOscil set the layer inhibition to oscillate according to the preset parameters.
+func (nt *Network) InhibOscil(ltime *Time, step int) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.InhibOscil(ltime, step) }, "InhibOscil")
+}
+
+// InhibOscilMute set the layer inhibition back to base
+func (nt *Network) InhibOscilMute(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.InhibOscilMute(ltime) }, "InhibOscilMute")
+}
+
 // SendGeDelta sends change in activation since last sent, if above thresholds
 // and integrates sent deltas into GeRaw and time-integrated Ge values
 func (nt *Network) SendGDelta(ltime *Time, sleep bool) {

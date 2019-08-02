@@ -83,6 +83,12 @@ type LeabraLayer interface {
 	// InitGInc initializes synaptic conductance increments -- optional
 	InitGInc()
 
+	// InhibOscil compute the inhibition oscillation by cycle.
+	InhibOscil(ltime *Time, step int)
+
+	// InhibOscil compute the inhibition oscillation by cycle.
+	InhibOscilMute(ltime *Time)
+
 	// SendGDelta sends change in activation since last sent, to increment recv
 	// synaptic conductances G, if above thresholds
 	SendGDelta(ltime *Time, sleep bool)
