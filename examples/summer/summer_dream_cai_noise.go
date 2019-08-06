@@ -310,7 +310,7 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 	inLay := net.AddLayer2D("Input", 5, 5, emer.Input)
 	blaNeInLay := net.AddLayer2D("Ne", 3, 1, emer.Input)
 	blaPoInLay := net.AddLayer2D("Po", 3, 1, emer.Input)
-	hid1Lay := net.AddLayer2D("Hidden1", 8, 8, emer.Hidden)
+	hid1Lay := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
 	outLay := net.AddLayer2D("Output", 5, 5, emer.Target)
 	blaNeOutLay := net.AddLayer2D("Ne_Out", 3, 1, emer.Target)
 	blaPoOutLay := net.AddLayer2D("Po_Out", 3, 1, emer.Target)
@@ -699,7 +699,11 @@ func (ss *Sim) TrainTrial() {
 
 	// TODO Added by DH: Here should be the good place to check if we should start a sleep
 	if ss.Sleep {
-		if (epc > 1) && (ss.EpcSSE < 0.7) {
+		if (epc > 1) && (ss.EpcSSE < 0.2) {
+			// Save trained weights first
+			fnm := ss.WeightsFileName()
+			fmt.Printf("Saving Weights to: %v\n", fnm)
+			ss.Net.SaveWtsJSON(gi.FileName(fnm))
 			ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 			//fmt.Println("I stepped into the sleeping black hole...")
 			ss.SleepTrial()

@@ -58,9 +58,9 @@ func (fb *FFFBParams) Update() {
 func (fb *FFFBParams) Defaults() {
 	fb.Gi = 1.8
 	fb.GiBase = fb.Gi
-	fb.GiOscPer = 100
-	fb.GiOscMax = 1.2
-	fb.GiOscMin = 0.8
+	fb.GiOscPer = 50
+	fb.GiOscMax = 1.025
+	fb.GiOscMin = 0.975
 	fb.FF = 1
 	fb.FB = 1
 	fb.FBTau = 1.4
