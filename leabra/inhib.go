@@ -40,8 +40,8 @@ type FFFBParams struct {
 	Gi       float32 `min:"0" def:"1.8" desc:"[1.5-2.3 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the ff and fb factors uniformly"`
 	GiBase   float32 `min:"0" def:"1.8" desc:"[1.5-2.3 typical, can go lower or higher as needed] the baseline overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the ff and fb factors uniformly"`
 	GiOscPer int     `min:"1" def:"100" desc:"[100 to 360 typical, can go lower or higher as needed] number of cycles for a complete inhibition oscillation period -- this is the frequency parameter to adjust to change how fast the inhibition oscillation would go -- it scales both the the ff and fb factors uniformly"`
-	GiOscMax float32 `min:"0" def:"1.8" desc:"[1 typical, can go lower or higher as needed, but no beyond the Gi] A percentage of the base. the peak of inhibition oscillation -- this is main parameter to adjust to change the maximum of the oscillation -- it scales both the the ff and fb factors uniformly"`
-	GiOscMin float32 `min:"0" def:"1.8" desc:"[0.6-0.8 typical, can go lower or higher as needed] A percentage of the base. the tout of inhibition oscillation -- this is main parameter to adjust to change the tout of the oscillation -- it scales both the the ff and fb factors uniformly"`
+	GiOscMax float32 `min:"0" def:"1.8" desc:"[must higher than 1 typically, used as a scalar of base] A percentage of the base. the peak of inhibition oscillation -- this is main parameter to adjust to change the maximum of the oscillation -- it scales both the the ff and fb factors uniformly"`
+	GiOscMin float32 `min:"0" def:"1.8" desc:"[0.6-0.8 typical, not higher than 1] A percentage of the base. the tout of inhibition oscillation -- this is main parameter to adjust to change the tout of the oscillation -- it scales both the the ff and fb factors uniformly"`
 	FF       float32 `viewif:"On" min:"0" def:"1" desc:"overall inhibitory contribution from feedforward inhibition -- multiplies average netinput (i.e., synaptic drive into layer) -- this anticipates upcoming changes in excitation, but if set too high, it can make activity slow to emerge -- see also ff0 for a zero-point for this value"`
 	FB       float32 `viewif:"On" min:"0" def:"1" desc:"overall inhibitory contribution from feedback inhibition -- multiplies average activation -- this reacts to layer activation levels and works more like a thermostat (turning up when the 'heat' in the layer is too high)"`
 	FBTau    float32 `viewif:"On" min:"0" def:"1.4,3,5" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life) for integrating feedback inhibitory values -- prevents oscillations that otherwise occur -- the fast default of 1.4 should be used for most cases but sometimes a slower value (3 or higher) can be more robust, especially when inhibition is strong or inputs are more rapidly changing"`
@@ -55,12 +55,20 @@ func (fb *FFFBParams) Update() {
 	fb.FBDt = 1 / fb.FBTau
 }
 
+func (fb *FFFBParams) Sleep() {
+	fb.GiBase = fb.Gi
+}
+
+func (fb *FFFBParams) Wake() {
+	fb.InhibOscilMute()
+}
+
 func (fb *FFFBParams) Defaults() {
 	fb.Gi = 1.8
 	fb.GiBase = fb.Gi
-	fb.GiOscPer = 50
-	fb.GiOscMax = 1.025
-	fb.GiOscMin = 0.975
+	fb.GiOscPer = 25
+	fb.GiOscMax = 1.03
+	fb.GiOscMin = 0.97
 	fb.FF = 1
 	fb.FB = 1
 	fb.FBTau = 1.4
@@ -111,9 +119,14 @@ func (fb *FFFBParams) Inhib(avgGe, maxGe, avgAct float32, inh *FFFBInhib) {
 // InhibOscil updates the inhibition oscillation based on the sine function.
 func (fb *FFFBParams) InhibOscil(step int) {
 	per := float32(step % fb.GiOscPer) / float32(fb.GiOscPer) * 2 * math32.Pi
-	rang := math32.Abs(fb.GiOscMax -fb.GiOscMin)
-	scal := float32(math32.Sin(per)) * rang * 0.5 + rang * 0.5 + fb.GiOscMin
-	fb.Gi = fb.GiBase * scal
+	scal := float32(math32.Sin(per))
+	fscal := float32(1.0)
+	if scal > 0 {
+		fscal = scal * (fb.GiOscMax - 1) + 1
+	} else {
+		fscal = scal * (1 - fb.GiOscMin) + 1
+	}
+	fb.Gi = fb.GiBase * fscal
 }
 
 // InhibOscilMute set the Gi back to GiBase.

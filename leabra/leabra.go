@@ -83,6 +83,12 @@ type LeabraLayer interface {
 	// InitGInc initializes synaptic conductance increments -- optional
 	InitGInc()
 
+	// Sleep compute the inhibition oscillation by cycle.
+	Sleep(ltime *Time)
+
+	// Sleep compute the inhibition oscillation by cycle.
+	Wake(ltime *Time)
+
 	// InhibOscil compute the inhibition oscillation by cycle.
 	InhibOscil(ltime *Time, step int)
 
@@ -172,7 +178,7 @@ type LeabraPrjn interface {
 	SendGDelta(si int, delta float32, sleep bool)
 
 	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
-	CalSynDep(si int, preSynAct float32)
+	CalSynDep(si int)
 
 	// CaUpdt compute Sender-Receiver co-activation based synaptic depression variable
 	CaUpdt(si int, preSynAct float32)

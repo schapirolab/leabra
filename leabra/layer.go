@@ -721,7 +721,7 @@ func (ly *Layer) CalSynDep(ltime *Time) {
 			if sp.IsOff() {
 				continue
 			}
-			sp.(LeabraPrjn).CalSynDep(ni, nrn.Act)
+			sp.(LeabraPrjn).CalSynDep(ni)
 			//		sp.(LeabraPrjn).MonChge(ni)
 		}
 	}
@@ -741,6 +741,18 @@ func (ly *Layer) MonChge(ltime *Time) {
 			sp.(LeabraPrjn).MonChge(ni)
 		}
 	}
+}
+
+// Sleep set the parameter to be sleep related
+func (ly *Layer) Sleep(ltime *Time) {
+	ly.Inhib.Layer.Sleep()
+	ly.Act.OptThresh.Sleep()
+}
+
+// Wake set the parameter to be Wake related
+func (ly *Layer) Wake(ltime *Time) {
+	ly.Inhib.Layer.Wake()
+	ly.Act.OptThresh.Wake()
 }
 
 // InhibOscil computes the layer level inhibition oscillation scaling factor.

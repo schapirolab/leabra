@@ -134,16 +134,28 @@ func (nt *Network) AlphaCycInit() {
 // This basic version doesn't use the time info, but more specialized types do, and we
 // want to keep a consistent API for end-user code.
 func (nt *Network) Cycle(ltime *Time, sleep bool) {
-	if sleep {
-		nt.CaUpdt(ltime) // Added Synaptic depression by DH.
-		nt.CalSynDep(ltime)
-		//nt.InitGInc()
-	}
 	nt.SendGDelta(ltime, sleep) // also does integ
 	nt.AvgMaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
 	nt.AvgMaxAct(ltime)
+	if sleep {
+		nt.CaUpdt(ltime) // Added Synaptic depression by DH.
+		nt.CalSynDep(ltime)
+		//nt.InitGInc()
+	}
+}
+
+
+// Sleep function set the parameters to be sleep related
+func (nt *Network) Sleep(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.Sleep(ltime) }, "Sleep")
+	nt.InitSdEffWt()
+}
+
+// Wake function set the parameters to be sleep related
+func (nt *Network) Wake(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.Wake(ltime) }, "Wake")
 }
 
 // InhibOscil set the layer inhibition to oscillate according to the preset parameters.

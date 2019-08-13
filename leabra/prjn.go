@@ -183,7 +183,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte("{\n"))
 	depth++
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GScale\": %v\n", pj.GScale)))
+	w.Write([]byte(fmt.Sprintf("\"GScale\": %v,\n", pj.GScale)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"%v\": [\n", slay.Nm)))
 	depth++
@@ -201,7 +201,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 			si := pj.RConIdx[st+ci]
 			w.Write([]byte(fmt.Sprintf("%v ", si)))
 		}
-		w.Write([]byte("]\n"))
+		w.Write([]byte("],\n"))
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Wt\": ["))
 		for ci := 0; ci < nc; ci++ {
@@ -209,7 +209,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 			sy := &pj.Syns[rsi]
 			w.Write([]byte(fmt.Sprintf("%v ", sy.Wt)))
 		}
-		w.Write([]byte("]\n"))
+		w.Write([]byte("],\n"))
 		depth--
 		w.Write(indent.TabBytes(depth))
 		if ri == nr-1 {
@@ -220,7 +220,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	}
 	depth--
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("]\n"))
+	w.Write([]byte("],\n"))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("}\n"))
@@ -269,10 +269,10 @@ func (pj *Prjn) InitSdEffWt() {
 		sy := &pj.Syns[si]
 		sy.Effwt = sy.Wt
 		sy.Cai = 0.0
-		sy.Ca_dec = 0.02
-		sy.Ca_inc = 0.2
+		sy.Ca_dec = 0.4
+		sy.Ca_inc = 0.6
 		sy.sd_ca_thr = 0.0
-		sy.sd_ca_gain = 1
+		sy.sd_ca_gain = 3.0
 		sy.sd_ca_thr_rescale = sy.sd_ca_gain / (1.0 - sy.sd_ca_thr)
 	}
 }
@@ -333,25 +333,23 @@ func (pj *Prjn) MonChge(si int) {
 func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
-	syns := pj.Syns[st : st+nc]
-	scons := pj.SConIdx[st : st+nc]
-	rlay := pj.Recv.(LeabraLayer).AsLeabra()
-	for ci := range syns {
-		ri := scons[ci]
-		rn := &rlay.Neurons[ri]
-		sy := &syns[ci]
+	counter := make([]int32,nc)
+	for ci := range counter{
+		ri := pj.SConIdx[st+int32(ci)]
+		rn := &pj.Recv.(LeabraLayer).AsLeabra().Neurons[ri]
+		sy := &pj.Syns[int32(ci)+st]
 		sy.CaUpdt(rn.Act, preSynAct)
 	}
 }
 
 // CalSynDep calculated the synaptic depression variable for each synapse.
-func (pj *Prjn) CalSynDep(si int, preSynAct float32) {
+func (pj *Prjn) CalSynDep(si int) {
 	// fmt.Println("Step into the real CalSynDep")
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
-	syns := pj.Syns[st : st+nc]
-	for ci := range syns {
-		sy := &syns[ci]
+	counter := make([]int32,nc)
+	for ci := range counter{
+		sy := &pj.Syns[int32(ci)+st]
 		sy.Effwt = sy.Wt * sy.SynDep()
 	}
 }

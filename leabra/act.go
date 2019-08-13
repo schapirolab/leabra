@@ -325,8 +325,20 @@ func (ot *OptThreshParams) Update() {
 }
 
 func (ot *OptThreshParams) Defaults() {
-	ot.Send = .1
+	// ot.Send = .1
+	ot.Send = 0.1
+//	ot.Delta = 0.005 // Set to zero by DH just to test the syndep.
 	ot.Delta = 0.005
+}
+
+func (ot *OptThreshParams) Wake() {
+	// ot.Send = .1
+	ot.Defaults()
+}
+
+func (ot *OptThreshParams) Sleep() {
+	ot.Send = 0.00
+	ot.Delta = 0.00
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

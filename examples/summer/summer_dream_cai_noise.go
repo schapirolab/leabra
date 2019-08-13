@@ -73,6 +73,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.4",
 				}},
+			{Sel: "#Hidden1", Desc: "output definitely needs higher inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "1.9",
+				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "best params always finish in this time",
@@ -132,17 +136,21 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "false",
-					"Prjn.Learn.Momentum.On": "false",
-					"Prjn.Learn.WtBal.On":    "false",
-				}},
-			{Sel: "Layer", Desc: "using stronger than 1.8 inhib for all of network -- can explore",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8",
+					"Prjn.Learn.Norm.On":     "true",
+					"Prjn.Learn.Momentum.On": "true",
+					"Prjn.Learn.WtBal.On":    "true",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.8",
+				}},
+			{Sel: "Layer", Desc: "using higher inhib for all of network during sleep-- can explore",
+				Params: params.Params{
+					"Layer.Inhib.Layer.GiBase": "1.8",
+				}},
+			{Sel: "Layer", Desc: "using higher inhib for all of network during sleep-- can explore",
+				Params: params.Params{
+					"Layer.Inhib.Layer.FB": "1.2",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -243,8 +251,8 @@ func (ss *Sim) New() {
 	ss.RndSeed = 1
 	ss.ViewOn = true
 	ss.Sleep = true
-	ss.InhibOscil = true
-	ss.TrainUpdt = leabra.Cycle
+	ss.InhibOscil = false
+	ss.TrainUpdt = leabra.FastSpike
 	ss.TestUpdt = leabra.Cycle
 	ss.TestInterval = 5
 }
@@ -273,7 +281,7 @@ func (ss *Sim) ConfigEnv() {
 		ss.MaxEpcs = 50
 	}
 	if ss.MaxSlpCyc == 0 { // allow user override
-		ss.MaxSlpCyc = 50
+		ss.MaxSlpCyc = 50000
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -310,7 +318,7 @@ func (ss *Sim) ConfigNet(net *leabra.Network) {
 	inLay := net.AddLayer2D("Input", 5, 5, emer.Input)
 	blaNeInLay := net.AddLayer2D("Ne", 3, 1, emer.Input)
 	blaPoInLay := net.AddLayer2D("Po", 3, 1, emer.Input)
-	hid1Lay := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
+	hid1Lay := net.AddLayer2D("Hidden1", 12, 12, emer.Hidden)
 	outLay := net.AddLayer2D("Output", 5, 5, emer.Target)
 	blaNeOutLay := net.AddLayer2D("Ne_Out", 3, 1, emer.Target)
 	blaPoOutLay := net.AddLayer2D("Po_Out", 3, 1, emer.Target)
@@ -417,9 +425,10 @@ func (ss *Sim) SleepCycInit() {
 	// Need to connect hidden back to input.
 	//ss.SetInBackPrjnOff(false)
 
-	ss.Net.InitSdEffWt()
 	// Set the parameters
 	ss.SetParamsSet("Sleep", "", true)
+
+	ss.Net.Sleep(&ss.Time)
 
 	// Set all layers to be random activation and no clamping.
 	for _, ly := range ss.Net.Layers {
@@ -472,6 +481,9 @@ func (ss *Sim) BackToWake() {
 	if ss.InhibOscil {
 		ss.Net.InhibOscilMute(&ss.Time)
 	}
+
+	// Set all parameters back to wake
+	ss.Net.Wake(&ss.Time)
 
 	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of inLay is: %d", int(inLay.Type()))
 	//fmt.Println("All layers should be back to normal. Here is a sanity check, the type of outLay is: %d", int(outLay.Type()))
@@ -573,6 +585,9 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		// Need to init the network here. How? Don't know yet. It was the SetToSleep program in Anna's version.
 		// Need to set the network to sleep mode, meaning set the input and output to be "hidden"
 	//	fmt.Println("%d real sleep cyc. Wish me luck!", cyc)
+		if (cyc+1)% 10 == 0 {
+			ss.Net.InitGInc()
+		}
 		if ss.InhibOscil {
 			ss.Net.InhibOscil(&ss.Time, cyc)
 		}
