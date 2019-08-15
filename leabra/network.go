@@ -141,7 +141,8 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	nt.AvgMaxAct(ltime)
 	if sleep {
 		nt.CaUpdt(ltime) // Added Synaptic depression by DH.
-		nt.CalSynDep(ltime)
+		nt.CalSynDep(ltime) //Added Synaptic depression by DH.
+		nt.CalLaySim(ltime) //Added Layer similarity monitor by DH.
 		//nt.InitGInc()
 	}
 }

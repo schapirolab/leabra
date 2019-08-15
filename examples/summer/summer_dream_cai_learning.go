@@ -286,7 +286,7 @@ func (ss *Sim) ConfigEnv() {
 		ss.MaxEpcs = 50
 	}
 	if ss.MaxSlpCyc == 0 { // allow user override
-		ss.MaxSlpCyc = 50000
+		ss.MaxSlpCyc = 800
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -1061,8 +1061,8 @@ func (ss *Sim) LogSlpCyc(dt *etable.Table, cyc int) {
 	}
 
 	inLay := ss.Net.LayerByName("Input").(*leabra.Layer)
-	blaNeInLay := ss.Net.LayerByName("Ne_In").(*leabra.Layer)
-	blaPoInLay := ss.Net.LayerByName("Po_In").(*leabra.Layer)
+	blaNeInLay := ss.Net.LayerByName("Ne").(*leabra.Layer)
+	blaPoInLay := ss.Net.LayerByName("Po").(*leabra.Layer)
 	hid1Lay := ss.Net.LayerByName("Hidden1").(*leabra.Layer)
 	outLay := ss.Net.LayerByName("Output").(*leabra.Layer)
 	blaNeOutLay := ss.Net.LayerByName("Ne_Out").(*leabra.Layer)
@@ -1071,7 +1071,7 @@ func (ss *Sim) LogSlpCyc(dt *etable.Table, cyc int) {
 	ss.AvgLaySim = (inLay.Sim + blaNeInLay.Sim + blaPoInLay.Sim + hid1Lay.Sim + outLay.Sim + blaPoOutLay.Sim + blaNeOutLay.Sim) / 7
 
 	dt.SetCellFloat("Cycle", cyc, float64(cyc))
-	dt.SetCellFloat("Average LaySim", cyc, float64(ss.AvgLaySim))
+	dt.SetCellFloat("AvgLaySim", cyc, float64(ss.AvgLaySim))
 	dt.SetCellFloat("Input LaySim", cyc, float64(inLay.Sim))
 	dt.SetCellFloat("BlaNeIn LaySim", cyc, float64(blaNeInLay.Sim))
 	dt.SetCellFloat("BlaPoIn LaySim", cyc, float64(blaPoInLay.Sim))
@@ -1092,14 +1092,14 @@ func (ss *Sim) ConfigSlpCycLog(dt *etable.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	np := 100000000 // max cycles
+	np := 800 // max cycles
 	dt.SetFromSchema(etable.Schema{
 		{"Cycle", etensor.INT64, nil, nil},
 		{"AvgLaySim", etensor.FLOAT64, nil, nil},
 		{"Input LaySim", etensor.FLOAT64, nil, nil},
 		{"BlaNeIn LaySim", etensor.FLOAT64, nil, nil},
 		{"BlaPoIn LaySim", etensor.FLOAT64, nil, nil},
-		{"Hid1 LaySim", etensor.FLOAT64, nil, nil},
+		{"Hidden1 LaySim", etensor.FLOAT64, nil, nil},
 		{"Output LaySim", etensor.FLOAT64, nil, nil},
 		{"BlaNeOut LaySim", etensor.FLOAT64, nil, nil},
 		{"BlaPoOut LaySim", etensor.FLOAT64, nil, nil},
@@ -1112,14 +1112,14 @@ func (ss *Sim) ConfigSlpCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", false, true, 0, false, 0)
-	plt.SetColParams("AvgLaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("Input LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("BlaNeIn LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("BlaPoIn LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("Hid1 LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("Out LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("BlaNeOut LaySim", true, true, -1.5, true, 1.5)
-	plt.SetColParams("BlaPoOut LaySim", true, true, -1.5, true, 1.5)
+	plt.SetColParams("AvgLaySim", true, true, -1, true, 1)
+	plt.SetColParams("Input LaySim", true, true, -1, true, 1)
+	plt.SetColParams("BlaNeIn LaySim", true, true, -1, true, 1)
+	plt.SetColParams("BlaPoIn LaySim", true, true, -1, true, 1)
+	plt.SetColParams("Hid1 LaySim", true, true, -1, true, 1)
+	plt.SetColParams("Output LaySim", true, true, -1, true, 1)
+	plt.SetColParams("BlaNeOut LaySim", true, true, -1, true, 1)
+	plt.SetColParams("BlaPoOut LaySim", true, true, -1, true, 1)
 	return plt
 }
 
