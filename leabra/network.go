@@ -146,7 +146,6 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	}
 }
 
-
 // Sleep function set the parameters to be sleep related
 func (nt *Network) Sleep(ltime *Time) {
 	nt.ThrLayFun(func(ly LeabraLayer) { ly.Sleep(ltime) }, "Sleep")
@@ -183,6 +182,11 @@ func (nt *Network) MonChge(ltime *Time) {
 // CaUpdt computes the synaptic depression variable.
 func (nt *Network) CaUpdt(ltime *Time) {
 	nt.ThrLayFun(func(ly LeabraLayer) { ly.CaUpdt(ltime) }, "CaUpdt")
+}
+
+// CalLaySim calculate the similarity of the PrevState and CurState of activation.
+func (nt *Network) CalLaySim(ltime *Time) {
+	nt.ThrLayFun(func(ly LeabraLayer) { ly.CalLaySim(ltime) }, "CalLaySim")
 }
 
 // CalSynDep computes the synaptic depression variable.

@@ -102,6 +102,9 @@ type LeabraLayer interface {
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
 
+	// CalLaySim calculate the similarity of the PrevState and CurState of activation.
+	CalLaySim(ltime *Time)
+
 	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
 	CalSynDep(ltime *Time)
 

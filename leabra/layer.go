@@ -56,8 +56,8 @@ func (ly *Layer) Defaults() {
 	}
 }
 
-// CalSim calculate the similarity of the PrevState and CurState of activation.
-func (ly *Layer) CalSim() {
+// CalLaySim calculate the similarity of the PrevState and CurState of activation.
+func (ly *Layer) CalLaySim(ltime *Time) {
 	var PrevState []float64
 	var CurState []float64
 	for _, n := range ly.Neurons {
