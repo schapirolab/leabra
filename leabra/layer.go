@@ -22,6 +22,7 @@ import (
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
+	"gonum.org/v1/gonum/stat"
 )
 
 // leabra.Layer has parameters for running a basic rate-coded Leabra layer
@@ -33,6 +34,7 @@ type Layer struct {
 	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
+	Sim     float64         `desc:"Similarity between current cycle and previous cycle."`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -52,6 +54,17 @@ func (ly *Layer) Defaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
+}
+
+// CalSim calculate the similarity of the PrevState and CurState of activation.
+func (ly *Layer) CalSim() {
+	var PrevState []float64
+	var CurState []float64
+	for _, n := range ly.Neurons {
+		PrevState = append(PrevState, float64(n.ActSent))
+		CurState = append(CurState, float64(n.Act))
+	}
+	ly.Sim = stat.Correlation(PrevState, CurState, nil)
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
