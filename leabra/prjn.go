@@ -268,6 +268,7 @@ func (pj *Prjn) InitWtsSyn(syn *Synapse) {
 	syn.DWt = 0
 	syn.Norm = 0
 	syn.Moment = 0
+	syn.SRAvgDp = 1
 }
 
 // InitWts initializes weight values according to Learn.WtInit params
@@ -353,8 +354,8 @@ func (pj *Prjn) MonChge(si int) {
 func (pj *Prjn) CaUpdt(si int, preSynAct float32) {
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
-	counter := make([]int32,nc)
-	for ci := range counter{
+	counter := make([]int32, nc)
+	for ci := range counter {
 		ri := pj.SConIdx[st+int32(ci)]
 		rn := &pj.Recv.(LeabraLayer).AsLeabra().Neurons[ri]
 		sy := &pj.Syns[int32(ci)+st]
@@ -367,8 +368,8 @@ func (pj *Prjn) CalSynDep(si int) {
 	// fmt.Println("Step into the real CalSynDep")
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
-	counter := make([]int32,nc)
-	for ci := range counter{
+	counter := make([]int32, nc)
+	for ci := range counter {
 		sy := &pj.Syns[int32(ci)+st]
 		sy.Effwt = sy.Wt * sy.SynDep()
 	}

@@ -81,16 +81,6 @@ func (nt *Network) InitSdEffWt() {
 	}
 }
 
-// InitGInc is a wrapper function added by DH to call the layer level of InitGInc
-func (nt *Network) InitGInc() {
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		ly.(LeabraLayer).InitGInc()
-	}
-}
-
 // InitActs fully initializes activation state -- not automatically called
 func (nt *Network) InitActs() {
 	for _, ly := range nt.Layers {
@@ -170,7 +160,7 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	nt.ActFmG(ltime)
 	nt.AvgMaxAct(ltime)
 	if sleep {
-		nt.CaUpdt(ltime) // Added Synaptic depression by DH.
+		nt.CaUpdt(ltime)    // Added Synaptic depression by DH.
 		nt.CalSynDep(ltime) //Added Synaptic depression by DH.
 		nt.CalLaySim(ltime) //Added Layer similarity monitor by DH.
 		//nt.InitGInc()

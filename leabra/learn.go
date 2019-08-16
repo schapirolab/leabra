@@ -86,17 +86,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.WtBal.Defaults()
 }
 
-// InitWts initializes weight values based on WtInit randomness parameters
-// It also updates the linear weight value based on the sigmoidal weight value
-func (ls *LearnSynParams) InitWts(syn *Synapse) {
-	syn.Wt = float32(ls.WtInit.Gen(-1))
-	syn.LWt = ls.WtSig.LinFmSigWt(syn.Wt)
-	syn.DWt = 0
-	syn.Norm = 0
-	syn.Moment = 0
-	syn.SRAvgDp = 1
-}
-
 // LWtFmWt updates the linear weight value based on the current effective Wt value.
 // effective weight is sigmoidally contrast-enhanced relative to the linear weight.
 func (ls *LearnSynParams) LWtFmWt(syn *Synapse) {
