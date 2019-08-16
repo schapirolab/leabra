@@ -480,7 +480,7 @@ func (ly *Layer) ApplyExt(ext etensor.Tensor) {
 		for xp := 0; xp < xpmx; xp++ {
 			for yn := 0; yn < ynmx; yn++ {
 				for xn := 0; xn < xnmx; xn++ {
-					idx := []int{yp, xp, yn, yp}
+					idx := []int{yp, xp, yn, xn}
 					vl := float32(ext.FloatVal(idx))
 					i := ly.Shp.Offset(idx)
 					nrn := &ly.Neurons[i]
@@ -522,8 +522,30 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 	}
 }
 
+// ApplyExt1D32 applies external input in the form of a flat 1-dimensional slice of float32s.
+// If the layer is a Target or Compare layer type, then it goes in Targ
+// otherwise it goes in Ext
+func (ly *Layer) ApplyExt1D32(ext []float32) {
+	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	mx := ints.MinInt(len(ext), len(ly.Neurons))
+	for i := 0; i < mx; i++ {
+		nrn := &ly.Neurons[i]
+		if nrn.IsOff() {
+			continue
+		}
+		vl := ext[i]
+		if toTarg {
+			nrn.Targ = vl
+		} else {
+			nrn.Ext = vl
+		}
+		nrn.ClearMask(clrmsk)
+		nrn.SetMask(setmsk)
+	}
+}
+
 // AlphaCycInit handles all initialization at start of new input pattern, including computing
-// netinput scaling from running average activation etc.
+// input scaling from running average activation etc.
 // should already have presented the external input to the network at this point.
 func (ly *Layer) AlphaCycInit() {
 	ly.LeabraLay.AvgLFmAvgM()
@@ -532,6 +554,13 @@ func (ly *Layer) AlphaCycInit() {
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActMAvg, pl.ActM.Avg)
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActPAvg, pl.ActP.Avg)
 		ly.Inhib.ActAvg.EffFmAvg(&pl.ActAvg.ActPAvgEff, pl.ActAvg.ActPAvg)
+	}
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.ActQ0 = nrn.ActP
 	}
 	ly.LeabraLay.GScaleFmAvgAct()
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
@@ -559,8 +588,9 @@ func (ly *Layer) AvgLFmAvgM() {
 
 // GScaleFmAvgAct computes the scaling factor for synaptic input conductances G,
 // based on sending layer average activation.
-// This attempts to automatically adjust for overall differences in raw activity coming into the units
-// to achieve a general target of around .5 to 1 for the integrated Ge value.
+// This attempts to automatically adjust for overall differences in raw activity
+// coming into the units to achieve a general target of around .5 to 1
+// for the integrated Ge value.
 func (ly *Layer) GScaleFmAvgAct() {
 	totGeRel := float32(0)
 	totGiRel := float32(0)
@@ -640,15 +670,18 @@ func (ly *Layer) HardClamp() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// InitGInc initializes GeInc and GiIn increment -- optional
+// InitGinc initializes the Ge excitatory and Gi inhibitory conductance accumulation states
+// including ActSent and G*Raw values.
+// called at start of trial always, and can be called optionally
+// when delta-based Ge computation needs to be updated (e.g., weights
+// might have changed strength)
 func (ly *Layer) InitGInc() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.GeInc = 0
-		nrn.GiInc = 0
+		ly.Act.InitGInc(nrn)
 	}
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
@@ -859,9 +892,10 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 func (ly *Layer) QuarterFinal(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		if ltime.Quarter == 2 {
+		switch ltime.Quarter {
+		case 2:
 			pl.ActM = pl.Act
-		} else if ltime.Quarter == 3 {
+		case 3:
 			pl.ActP = pl.Act
 		}
 	}
@@ -870,13 +904,18 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.Quarter == 2 { // end of minus phase
+		switch ltime.Quarter {
+		case 0:
+			nrn.ActQ1 = nrn.Act
+		case 1:
+			nrn.ActQ2 = nrn.Act
+		case 2:
 			nrn.ActM = nrn.Act
 			if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 				nrn.Ext = nrn.Targ
 				nrn.SetFlag(NeurHasExt)
 			}
-		} else if ltime.Quarter == 3 {
+		case 3:
 			nrn.ActP = nrn.Act
 			nrn.ActDif = nrn.ActP - nrn.ActM
 			nrn.ActAvg += ly.Act.Dt.AvgDt * (nrn.Act - nrn.ActAvg)

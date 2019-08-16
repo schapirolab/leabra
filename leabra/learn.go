@@ -6,7 +6,6 @@ package leabra
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/emergent/erand"
 )
 
 ///////////////////////////////////////////////////////////////////////
@@ -58,18 +57,15 @@ func (ln *LearnNeurParams) AvgLFmAvgM(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  LearnSynParams
 
-// todo: lrate sched
-
 // leabra.LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn    bool            `desc:"enable learning for this projection"`
-	Lrate    float32         `desc:"learning rate"`
-	WtInit   erand.RndParams `view:"inline" desc:"initial random weight distribution"`
-	XCal     XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
-	WtSig    WtSigParams     `view:"inline" desc:"parameters for the sigmoidal contrast weight enhancement"`
-	Norm     DWtNormParams   `view:"inline" desc:"parameters for normalizing weight changes by abs max dwt"`
-	Momentum MomentumParams  `view:"inline" desc:"parameters for momentum across weight changes"`
-	WtBal    WtBalParams     `view:"inline" desc:"parameters for balancing strength of weight increases vs. decreases"`
+	Learn    bool           `desc:"enable learning for this projection"`
+	Lrate    float32        `desc:"learning rate"`
+	XCal     XCalParams     `view:"inline" desc:"parameters for the XCal learning rule"`
+	WtSig    WtSigParams    `view:"inline" desc:"parameters for the sigmoidal contrast weight enhancement"`
+	Norm     DWtNormParams  `view:"inline" desc:"parameters for normalizing weight changes by abs max dwt"`
+	Momentum MomentumParams `view:"inline" desc:"parameters for momentum across weight changes"`
+	WtBal    WtBalParams    `view:"inline" desc:"parameters for balancing strength of weight increases vs. decreases"`
 }
 
 func (ls *LearnSynParams) Update() {
@@ -83,9 +79,6 @@ func (ls *LearnSynParams) Update() {
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
 	ls.Lrate = 0.04
-	ls.WtInit.Mean = 0.5
-	ls.WtInit.Var = 0.25
-	ls.WtInit.Dist = erand.Uniform
 	ls.XCal.Defaults()
 	ls.WtSig.Defaults()
 	ls.Norm.Defaults()
@@ -114,6 +107,7 @@ func (ls *LearnSynParams) LWtFmWt(syn *Synapse) {
 // effective weight is sigmoidally contrast-enhanced relative to the linear weight.
 func (ls *LearnSynParams) WtFmLWt(syn *Synapse) {
 	syn.Wt = ls.WtSig.SigFmLinWt(syn.LWt)
+	syn.Wt *= syn.Scale
 }
 
 // CHLdWt returns the error-driven and bcm Hebbian weight change components for the
@@ -129,7 +123,7 @@ func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgM, ruAvgSLrn, ruAvgM, ruAvgL fl
 // WtFmDWt updates the synaptic weights from accumulated weight changes
 // wbInc and wbDec are the weight balance factors, wt is the sigmoidal contrast-enhanced
 // weight and lwt is the linear weight value
-func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32) {
+func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32, scale float32) {
 	if *dwt == 0 {
 		return
 	}
@@ -152,11 +146,8 @@ func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32) {
 	} else if *lwt > 1 {
 		*lwt = 1
 	}
-	*wt = ls.WtSig.SigFmLinWt(*lwt) //  todo: scale *
+	*wt = scale * ls.WtSig.SigFmLinWt(*lwt)
 	*dwt = 0
-	//    if(adapt_scale.on) {
-	//      adapt_scale.AdaptWtScale(scale, wt);
-	//    }
 }
 
 // LrnActAvgParams has rate constants for averaging over activations at different time scales,

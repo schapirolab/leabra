@@ -16,6 +16,7 @@ type Synapse struct {
 	DWt               float32 `desc:"change in synaptic weight, from learning"`
 	Norm              float32 `desc:"DWt normalization factor -- reset to max of abs value of DWt, decays slowly down over time -- serves as an estimate of variance in weight changes over time"`
 	Moment            float32 `desc:"momentum -- time-integrated DWt changes, to accumulate a consistent direction of weight change and cancel out dithering contradictory changes"`
+	Scale             float32 `desc:"scaling parameter for this connection: effective weight value is scaled by this factor -- useful for topographic connectivity patterns e.g., to enforce more distant connections to always be lower in magnitude than closer connections.  Value defaults to 1 (cannot be exactly 0 -- otherwise is automatically reset to 1 -- use a very small number to approximate 0).  Typically set by using the prjn.Pattern Weights() values where appropriate"`
 	SRAvgDp           float32 `desc:"Synaptic Depression scaling variable based on sender-receiver neuron average activation (represented by the inverse of sum of co-activation)"`
 	Cai               float32 `desc:"cai intacelluarl calcium. Default to be 0."`
 	Effwt             float32 `desc:"Maybe it is needed. I don't know yet. Default to be the same as Wt."`
@@ -26,7 +27,7 @@ type Synapse struct {
 	sd_ca_thr_rescale float32 `desc:"#READ_ONLY rescaling factor taking into account sd_ca_gain and sd_ca_thr (= sd_ca_gain/(1 - sd_ca_thr))"`
 }
 
-var SynapseVars = []string{"Wt", "LWt", "DWt", "Norm", "Moment", "SRAvgDp", "Cai", "Effwt"}
+var SynapseVars = []string{"Wt", "LWt", "DWt", "Norm", "Moment", "Scale", "SRAvgDp", "Cai", "Effwt", "Ca_inc", "Ca_dec", "sd_ca_thr", "sd_ca_gain", "sd_ca_thr_rescale"}
 
 var SynapseVarsMap map[string]int
 
