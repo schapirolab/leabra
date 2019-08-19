@@ -741,20 +741,20 @@ func (ly *Layer) GFmInc(ltime *Time) {
 }
 
 // CaUpdt computes the Sender-Receiver co-activation based synaptic depression, added by DH.
-func (ly *Layer) CaUpdt(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		for _, sp := range ly.SndPrjns {
-			if sp.IsOff() {
-				continue
-			}
-			sp.(LeabraPrjn).CaUpdt(ni, nrn.Act)
-		}
-	}
-}
+//func (ly *Layer) CaUpdt(ltime *Time) {
+//	for ni := range ly.Neurons {
+//		nrn := &ly.Neurons[ni]
+//		if nrn.IsOff() {
+//			continue
+//		}
+//		for _, sp := range ly.SndPrjns {
+//			if sp.IsOff() {
+//				continue
+//			}
+//			sp.(LeabraPrjn).CaUpdt(ni, nrn.Act)
+//		}
+//	}
+//}
 
 // CalSynDep computes the Sender-Receiver co-activation based synaptic depression, added by DH.
 func (ly *Layer) CalSynDep(ltime *Time) {
@@ -767,6 +767,7 @@ func (ly *Layer) CalSynDep(ltime *Time) {
 			if sp.IsOff() {
 				continue
 			}
+			sp.(LeabraPrjn).CaUpdt(ni, nrn.Act)
 			sp.(LeabraPrjn).CalSynDep(ni)
 			//		sp.(LeabraPrjn).MonChge(ni)
 		}

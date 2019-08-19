@@ -286,7 +286,7 @@ func (ss *Sim) ConfigEnv() {
 		ss.MaxEpcs = 50
 	}
 	if ss.MaxSlpCyc == 0 { // allow user override
-		ss.MaxSlpCyc = 800
+		ss.MaxSlpCyc = 330
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -596,6 +596,8 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 		if ss.InhibOscil {
 			ss.Net.InhibOscil(&ss.Time, cyc)
 		}
+
+
 		ss.Net.Cycle(&ss.Time, true)
 		//fmt.Scanln()
 		//	fmt.Println("Sleep cyc works? Now what?")
@@ -1092,7 +1094,7 @@ func (ss *Sim) ConfigSlpCycLog(dt *etable.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	np := 800 // max cycles
+	np := 330 // max cycles
 	dt.SetFromSchema(etable.Schema{
 		{"Cycle", etensor.INT64, nil, nil},
 		{"AvgLaySim", etensor.FLOAT64, nil, nil},
@@ -1116,7 +1118,7 @@ func (ss *Sim) ConfigSlpCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Input LaySim", true, true, -1, true, 1)
 	plt.SetColParams("BlaNeIn LaySim", true, true, -1, true, 1)
 	plt.SetColParams("BlaPoIn LaySim", true, true, -1, true, 1)
-	plt.SetColParams("Hid1 LaySim", true, true, -1, true, 1)
+	plt.SetColParams("Hidden1 LaySim", true, true, -1, true, 1)
 	plt.SetColParams("Output LaySim", true, true, -1, true, 1)
 	plt.SetColParams("BlaNeOut LaySim", true, true, -1, true, 1)
 	plt.SetColParams("BlaPoOut LaySim", true, true, -1, true, 1)

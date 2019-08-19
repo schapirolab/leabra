@@ -290,7 +290,8 @@ func (pj *Prjn) InitSdEffWt() {
 		sy := &pj.Syns[si]
 		sy.Effwt = sy.Wt
 		sy.Cai = 0.0
-		sy.Ca_dec = 0.4
+		sy.Rec = 0.002
+		sy.Ca_dec = 0.25
 		sy.Ca_inc = 0.6
 		sy.sd_ca_thr = 0.0
 		sy.sd_ca_gain = 3.0
@@ -372,6 +373,13 @@ func (pj *Prjn) CalSynDep(si int) {
 	for ci := range counter {
 		sy := &pj.Syns[int32(ci)+st]
 		sy.Effwt = sy.Wt * sy.SynDep()
+		// Final checking if the Effwt is out of bounds
+		if sy.Effwt > sy.Wt {
+			sy.Effwt = sy.Wt
+		}
+		if sy.Effwt < 0.0 {
+			sy.Effwt = 0.0
+		}
 	}
 }
 

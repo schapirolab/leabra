@@ -19,6 +19,7 @@ type Synapse struct {
 	Scale             float32 `desc:"scaling parameter for this connection: effective weight value is scaled by this factor -- useful for topographic connectivity patterns e.g., to enforce more distant connections to always be lower in magnitude than closer connections.  Value defaults to 1 (cannot be exactly 0 -- otherwise is automatically reset to 1 -- use a very small number to approximate 0).  Typically set by using the prjn.Pattern Weights() values where appropriate"`
 	SRAvgDp           float32 `desc:"Synaptic Depression scaling variable based on sender-receiver neuron average activation (represented by the inverse of sum of co-activation)"`
 	Cai               float32 `desc:"cai intacelluarl calcium. Default to be 0."`
+	Rec               float32 `desc:"// #DEF_0.002 rate of recovery from depression"`
 	Effwt             float32 `desc:"Maybe it is needed. I don't know yet. Default to be the same as Wt."`
 	Ca_inc            float32 `desc:" #DEF_0.2 time constant for increases in Ca_i (from NMDA etc currents) -- default base value is .01 per cycle -- multiply by network->ct_learn.syndep_int to get this value (default = 20)"`
 	Ca_dec            float32 `#DEF_0.2 time constant for decreases in Ca_i (from Ca pumps pushing Ca back out into the synapse) -- default base value is .01 per cycle -- multiply by network->ct_learn.syndep_int to get this value (default = 20)`
@@ -74,7 +75,7 @@ func (sy *Synapse) SynDep() float32 {
 
 // CaUpdt calculated the Cai for each synapses.
 func (sy *Synapse) CaUpdt(ru_act float32, su_act float32) {
-	drive := ru_act * su_act
+	drive := ru_act * su_act * sy.Effwt
 	// orgl := sy.Cai
 	sy.Cai += sy.Ca_inc*(1.0-sy.Cai)*drive - sy.Ca_dec*sy.Cai
 	//	if orgl != sy.Cai {

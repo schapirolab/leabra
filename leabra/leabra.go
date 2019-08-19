@@ -109,7 +109,7 @@ type LeabraLayer interface {
 	CalSynDep(ltime *Time)
 
 	// CalSynDep compute Sender-Receiver co-activation based synaptic depression variable
-	CaUpdt(ltime *Time)
+	//CaUpdt(ltime *Time)
 
 	// MonChge monitor Sender-Receiver co-activation based synaptic depression variable
 	MonChge(ltime *Time)

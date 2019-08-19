@@ -160,7 +160,8 @@ func (nt *Network) Cycle(ltime *Time, sleep bool) {
 	nt.ActFmG(ltime)
 	nt.AvgMaxAct(ltime)
 	if sleep {
-		nt.CaUpdt(ltime)    // Added Synaptic depression by DH.
+		//nt.CaUpdt(ltime)    // Added Synaptic depression by DH.
+		//nt.CaUpdt was moved into CalSynDep
 		nt.CalSynDep(ltime) //Added Synaptic depression by DH.
 		nt.CalLaySim(ltime) //Added Layer similarity monitor by DH.
 		//nt.InitGInc()
@@ -201,9 +202,9 @@ func (nt *Network) MonChge(ltime *Time) {
 }
 
 // CaUpdt computes the synaptic depression variable.
-func (nt *Network) CaUpdt(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.CaUpdt(ltime) }, "CaUpdt")
-}
+//func (nt *Network) CaUpdt(ltime *Time) {
+//	nt.ThrLayFun(func(ly LeabraLayer) { ly.CaUpdt(ltime) }, "CaUpdt")
+//}
 
 // CalLaySim calculate the similarity of the PrevState and CurState of activation.
 func (nt *Network) CalLaySim(ltime *Time) {
