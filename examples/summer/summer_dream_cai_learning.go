@@ -1016,8 +1016,8 @@ func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	//	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
-	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
+	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
+//	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
 	if err != nil {
 		log.Println(err)
 	}

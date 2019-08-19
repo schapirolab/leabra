@@ -66,6 +66,7 @@ type LearnSynParams struct {
 	Norm     DWtNormParams  `view:"inline" desc:"parameters for normalizing weight changes by abs max dwt"`
 	Momentum MomentumParams `view:"inline" desc:"parameters for momentum across weight changes"`
 	WtBal    WtBalParams    `view:"inline" desc:"parameters for balancing strength of weight increases vs. decreases"`
+	SRAvgCal SRAvgCalParams `view:"inline" desc:"parameters for Cal-based synaptic depression sleep learning rules."`
 }
 
 func (ls *LearnSynParams) Update() {
@@ -74,6 +75,7 @@ func (ls *LearnSynParams) Update() {
 	ls.Norm.Update()
 	ls.Momentum.Update()
 	ls.WtBal.Update()
+	ls.SRAvgCal.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
@@ -84,6 +86,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Norm.Defaults()
 	ls.Momentum.Defaults()
 	ls.WtBal.Defaults()
+	ls.SRAvgCal.Defaults()
 }
 
 // LWtFmWt updates the linear weight value based on the current effective Wt value.
@@ -136,6 +139,21 @@ func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32, s
 		*lwt = 1
 	}
 	*wt = scale * ls.WtSig.SigFmLinWt(*lwt)
+	*dwt = 0
+}
+
+// Here are the rule for updating the Wts for CtLeabraCAL
+// IMPORTANT!!!!! CtLeabraCALFmDWt is different from CtLeabraCALFmWt
+func (ls *LearnSynParams) CtLeabraCALFmWt(dwt, pdw, wt, lwt *float32, scale float32) {
+	if *dwt > 0.0 {
+		*dwt *= (1.0 - *lwt)
+	} else {
+		*dwt *= *lwt
+	}
+	if *dwt != 0.0 {
+		*wt = scale * ls.WtSig.SigFmLinWt(*lwt+*dwt)
+	}
+	*pdw = *dwt
 	*dwt = 0
 }
 
@@ -578,6 +596,36 @@ func (wb *WtBalParams) WtBal(wbAvg float32) (fact, inc, dec float32) {
 		dec = 2 - inc        // as inc goes down, dec goes up..  sum to 2
 	}
 	return fact, inc, dec
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  SRAvgCalParams
+
+// SRAvgCalParams are Cal-based synaptic depression sleep learning rules.
+// CtLeabra CAL SRAvg stuff
+// TODO More detail comments are needed here
+type SRAvgCalParams struct {
+	On          bool    `desc:"Perform SynDep based learning during sleep?"`
+	SRAvg_M     float32 `desc:"Co-activation between two connected neurons during minus phase."`
+	SRAvg_P     float32 `desc:"Co-activation between two connected neurons during plus phase. Previously annotated as SRAvg_S in older versions."`
+	drive       float32 `desc:"Co-activation between two connected neurons"`
+	SRAvg_M_nrm float32 `desc:"normalizer for SRAvg_M, usually set to be 1/number of minus cycles"`
+	SRAvg_P_nrm float32 `desc:"normalizer for SRAvg_P, usually set to be 1/number of plus cycles"`
+}
+
+func (sr *SRAvgCalParams) Update() {
+}
+
+func (sr *SRAvgCalParams) Defaults() {
+	sr.On = false
+	sr.SRAvg_M = 0.0
+	sr.SRAvg_P = 0.0
+}
+
+// Here are the rule for calculating the DWt for CtLeabraCAL
+// IMPORTANT!!!! CtLeabraCALFmDWt is different from CtLeabraCALFmWt
+func (sr *SRAvgCalParams) CtLeabraCALFmDWt(lrate float32, dwt, wt, lwt *float32, scale float32) {
+	*dwt += lrate * (sr.SRAvg_P_nrm*sr.SRAvg_P - sr.SRAvg_M_nrm*sr.SRAvg_M)
 }
 
 /*
