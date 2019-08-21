@@ -191,6 +191,9 @@ type Sim struct {
 	Time         leabra.Time       `desc:"leabra timing parameters and state"`
 	ViewOn       bool              `desc:"whether to update the network view while running"`
 	Sleep        bool              `desc:"Sleep or not"`
+	LrnDrgSlp    bool              `desc:"Learning during sleep?"`
+	SlpPlusThr   float32           `desc:"The threshold for entering a sleep plus phase"`
+	SlpMinusThr  float32           `desc:"The threshold for entering a sleep minus phase"`
 	InhibOscil   bool              `desc:"whether to implement inhibition oscillation"`
 	TrainUpdt    leabra.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
 	SleepUpdt    leabra.TimeScales `desc:"at what time scale to update the display during sleep? Anything longer than Epoch updates at Epoch in this model"` // added by DH
@@ -497,7 +500,7 @@ func (ss *Sim) BackToWake() {
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
-// AlphaCyc runs one alpha-cycle (100 msec, 4 quarters)			 of processing.
+// AlphaCyc runs one alpha-cycle (100 msec, 4 quarters)	of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
 // If train is true, then learning DWt or WtFmDWt calls are made.
@@ -578,12 +581,27 @@ func (ss *Sim) MonSlpCyc() {
 // - SleepCyc is also built upon Cycle. How? Don't know yet.
 
 func (ss *Sim) SleepCyc(WakeReplay bool) {
-	// fmt.Println("I am in the SleepCyc!!!! Can't believe it!!!")
 	//ss.MaxSlpCyc = 50
+
+	// Variables for sleep learning. Not sure if they should be included in ss variable list. by DH
+	//	changeThr := 0.99
+	//	learnAsPlus := false
+	//	learnAsMinus := false
+	//	learnAsNothing := true
+	//	plusHappened := false
+	//	minusHappened := false
+	//	plusCounter := 0
+	//	minusCounter := 0
+	//	plusDone := false
+	//	learningDone := false
+	//	learnState := 0.0 // Why this is needed?
+	//	cycSinCrit := 0
+	//	cycSinPlus := 0
+	//	lrnAfrCyc := 0
+	//	lastCycSinCrit := 0
+
 	viewUpdt := ss.SleepUpdt
-	//fmt.Scanln()
 	ss.SleepCycInit()
-	//fmt.Scanln()
 	fmt.Println("Sleep mode officially starts here.")
 	ss.Time.SleepCycStart()
 	for cyc := 0; cyc < ss.MaxSlpCyc; cyc++ {
@@ -597,14 +615,14 @@ func (ss *Sim) SleepCyc(WakeReplay bool) {
 			ss.Net.InhibOscil(&ss.Time, cyc)
 		}
 
-
+		// Run one sleep cycle
 		ss.Net.Cycle(&ss.Time, true)
-		//fmt.Scanln()
-		//	fmt.Println("Sleep cyc works? Now what?")
-		ss.Time.CycleInc()
-		//	fmt.Println("I think everything works through but I am not sure.")
 		// Logging the SlpCycLog
 		ss.LogSlpCyc(ss.SlpCycLog, ss.Time.Cycle)
+		// Mark plus or minus phase
+
+		// Forward the cycle timer
+		ss.Time.CycleInc()
 		if ss.ViewOn {
 			switch viewUpdt {
 			case leabra.Cycle:
@@ -1017,7 +1035,7 @@ func (ss *Sim) OpenPats() {
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
 	err := dt.OpenCSV("summer_5x5_25.dat", etable.Tab)
-//	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
+	//	err := dt.OpenCSV("./examples/summer/summer_5x5_25.dat", etable.Tab)
 	if err != nil {
 		log.Println(err)
 	}

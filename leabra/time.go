@@ -49,10 +49,15 @@ func (tm *Time) AlphaCycStart() {
 	tm.Quarter = 0
 }
 
-// SleepCycStart starts a new sleep-cycle (set of 4 quarters)
+// SleepCycStart starts a new sleep-cycle (super long trial, no quarters)
 func (tm *Time) SleepCycStart() {
 	tm.Cycle = 0
-	// tm.Quarter = 0
+	tm.Quarter = 0
+}
+
+// MarkPlus set the PlusPhase variable
+func (tm *Time) MarkPlus(plus bool) {
+	tm.PlusPhase = plus
 }
 
 // CycleInc increments at the cycle level
